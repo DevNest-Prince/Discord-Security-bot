@@ -6,6 +6,7 @@ import { connectRedis, disconnectRedis } from './database/redis.js';
 
 // Naya Event Import kiya
 import { InteractionCreateEvent } from './events/interactionCreate.js';
+import { MessageCreateEvent } from './events/messageCreate.js';
 
 const client = new Client({
   intents: [
@@ -25,7 +26,8 @@ async function bootstrap() {
     await connectRedis();
 
     // Bot ko Event sikhaya
-    client.on(InteractionCreateEvent.name, (...args) => InteractionCreateEvent.execute(...args));
+    (client as any).on(InteractionCreateEvent.name, (interaction: any) => InteractionCreateEvent.execute(interaction));
+    (client as any).on(MessageCreateEvent.name, (message: any) => MessageCreateEvent.execute(message));
 
     await client.login(env.DISCORD_TOKEN);
     logger.info({ event: 'bot_ready', user: client.user?.tag }, 'Bot successfully logged in and is now ONLINE! 🚀');
