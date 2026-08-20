@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import path from "node:path";
 import { Client, GatewayIntentBits } from "discord.js";
+import { connectDatabase } from "@aegisx/database";
+import { connectRedis } from "@aegisx/redis";
 
 dotenv.config({
   path: path.resolve(process.cwd(), "../../.env"),
@@ -12,12 +14,23 @@ if (!token) {
   throw new Error("DISCORD_TOKEN is missing from environment variables.");
 }
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
+async function startBot() {
+  await connectDatabase();
+  await connectRedis();
 
-client.once("clientReady", (readyClient) => {
-  console.log(`✅ ${readyClient.user.tag} is online!`);
-});
 
-client.login(token);
+  const client = new Client({
+    intents: [GatewayIntentBits.Guilds],
+  });
+
+  client.once("clientReady", (readyClient) => {
+    console.log(`✅ ${readyClient.user.tag} is online!`);
+  });
+
+  await client.login(token);
+}
+
+startBot().catch((error) => {
+  console.error("❌ Failed to start AegisX:", error);
+  process.exit(1);
+});
