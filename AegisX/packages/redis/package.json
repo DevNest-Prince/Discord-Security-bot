@@ -1,19 +1,16 @@
 {
-  "name": "bot",
+  "name": "@aegisx/redis",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "AegisX Discord Bot",
+  "description": "Redis client for AegisX",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "build": "tsc"
   },
   "dependencies": {
-    "@aegisx/database": "1.0.0",
-    "@aegisx/redis": "1.0.0",
-    "discord.js": "^14.27.0",
+    "redis": "^5.8.2",
     "dotenv": "^17.4.2"
   },
   "devDependencies": {
