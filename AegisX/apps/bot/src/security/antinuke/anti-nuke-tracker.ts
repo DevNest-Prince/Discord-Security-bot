@@ -1,11 +1,11 @@
+import type {
+  AntiNukeAction,
+  AntiNukeThresholdResult,
+  AntiNukeTrackerOptions,
+} from "./anti-nuke.types.js";
+
 interface CounterState {
   timestamps: number[];
-}
-
-export interface AntiNukeThresholdResult {
-  count: number;
-  threshold: number;
-  triggered: boolean;
 }
 
 export class AntiNukeTracker {
@@ -15,17 +15,17 @@ export class AntiNukeTracker {
   >();
 
   record(
-    guildId: string,
-    executorId: string,
-    eventName: string,
-    windowSeconds: number,
-    threshold: number,
+    options: AntiNukeTrackerOptions,
   ): AntiNukeThresholdResult {
-    const key =
-      `${guildId}:${executorId}:${eventName}`;
+    const key = this.createKey(
+      options.guildId,
+      options.executorId,
+      options.securityAction,
+    );
 
     const now = Date.now();
-    const windowMs = windowSeconds * 1000;
+    const windowMs =
+      options.windowSeconds * 1000;
 
     const state =
       this.counters.get(key) ?? {
@@ -43,19 +43,24 @@ export class AntiNukeTracker {
 
     return {
       count: state.timestamps.length,
-      threshold,
+      threshold: options.threshold,
       triggered:
-        state.timestamps.length >= threshold,
+        state.timestamps.length >=
+        options.threshold,
     };
   }
 
   clear(
     guildId: string,
     executorId: string,
-    eventName: string,
+    securityAction: AntiNukeAction,
   ): void {
     this.counters.delete(
-      `${guildId}:${executorId}:${eventName}`,
+      this.createKey(
+        guildId,
+        executorId,
+        securityAction,
+      ),
     );
   }
 
@@ -73,7 +78,8 @@ export class AntiNukeTracker {
     windowSeconds: number,
   ): void {
     const now = Date.now();
-    const windowMs = windowSeconds * 1000;
+    const windowMs =
+      windowSeconds * 1000;
 
     for (const [key, state] of this.counters) {
       state.timestamps = state.timestamps.filter(
@@ -85,6 +91,18 @@ export class AntiNukeTracker {
         this.counters.delete(key);
       }
     }
+  }
+
+  private createKey(
+    guildId: string,
+    executorId: string,
+    securityAction: AntiNukeAction,
+  ): string {
+    return [
+      guildId,
+      executorId,
+      securityAction,
+    ].join(":");
   }
 }
 

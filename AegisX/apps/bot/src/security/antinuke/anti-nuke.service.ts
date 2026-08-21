@@ -37,16 +37,16 @@ export class AntiNukeService {
     const config = await getGuildConfig(guild.id);
 
     const antiNuke =
-  config.security?.antiNuke;
+      config.security?.antiNuke;
 
-if (!antiNuke || !antiNuke.enabled) {
+    if (!antiNuke || !antiNuke.enabled) {
       return {
-        handled: false,
-        triggered: false,
-        executorId: null,
-        threshold: null,
-      };
-    }
+       handled: false,
+       triggered: false,
+       executorId: null,
+       threshold: null,
+    };
+  }
 
     if (
       antiNuke.threshold <= 0 ||
@@ -93,13 +93,13 @@ if (!antiNuke || !antiNuke.enabled) {
     }
 
     const threshold =
-      antiNukeTracker.record(
-        guild.id,
-        decision.executorId,
-        options.eventName,
-        antiNuke.windowSeconds,
-        antiNuke.threshold,
-      );
+     antiNukeTracker.record({
+      guildId: guild.id,
+      executorId: decision.executorId,
+      securityAction: "ban",
+      windowSeconds: antiNuke.windowSeconds,
+      threshold: antiNuke.threshold,
+    });
 
     if (!threshold.triggered) {
       console.log(
