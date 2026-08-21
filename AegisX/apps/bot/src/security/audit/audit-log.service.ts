@@ -100,7 +100,68 @@ export class AuditLogService {
       return null;
     }
   }
+    async findRecentWebhookEntry(
+    guild: Guild,
+  ): Promise<AuditLogResult | null> {
+    if (
+      !guild.members.me?.permissions.has(
+        "ViewAuditLog",
+      )
+    ) {
+      return null;
+    }
 
+    try {
+      const [created, deleted] = await Promise.all([
+        guild.fetchAuditLogs({
+          type: AuditLogEvent.WebhookCreate,
+          limit: 5,
+        }),
+        guild.fetchAuditLogs({
+          type: AuditLogEvent.WebhookDelete,
+          limit: 5,
+        }),
+      ]);
+
+      const entries = [
+        ...created.entries.values(),
+        ...deleted.entries.values(),
+      ]
+        .filter((entry) => {
+          const ageMs =
+            Date.now() - entry.createdTimestamp;
+
+          return (
+            ageMs >= 0 &&
+            ageMs <= 10_000 &&
+            entry.targetId !== null
+          );
+        })
+        .sort(
+          (a, b) =>
+            b.createdTimestamp -
+            a.createdTimestamp,
+        );
+
+      const entry = entries[0];
+
+      if (!entry) {
+        return null;
+      }
+
+      return {
+        entry,
+        executorId: entry.executorId,
+      };
+    } catch (error) {
+      console.error(
+        `Failed to fetch webhook audit logs for guild ${guild.id}:`,
+        error,
+      );
+
+      return null;
+    }
+  }
   clearGuild(guildId: string): void {
     this.rateLimiter.clearGuild(guildId);
   }
