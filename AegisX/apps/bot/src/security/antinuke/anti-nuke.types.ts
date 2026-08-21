@@ -1,6 +1,7 @@
 export type AntiNukeAction =
   | "ban"
   | "kick"
+  | "strip_roles"
   | "channel-delete"
   | "channel-create"
   | "role-delete"

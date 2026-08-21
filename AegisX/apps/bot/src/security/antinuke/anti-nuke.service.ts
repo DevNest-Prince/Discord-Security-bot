@@ -97,33 +97,34 @@ export class AntiNukeService {
     }
 
     const threshold =
-     await antiNukeTracker.record({
-      guildId: guild.id,
-      executorId: decision.executorId,
-      securityAction: "ban",
-      windowSeconds: antiNuke.windowSeconds,
-      threshold: antiNuke.threshold,
-    });
+  await antiNukeTracker.record({
+    guildId: guild.id,
+    executorId: decision.executorId,
+    securityAction: antiNuke.action,
+    windowSeconds: antiNuke.windowSeconds,
+    threshold: antiNuke.threshold,
+  });
 
-    if (!threshold.triggered) {
-      console.log(
-        `🛡️ Anti-Nuke: ${options.eventName} ` +
-        `by ${decision.executorId} ` +
-        `(${threshold.count}/${threshold.threshold})`,
-      );
+if (!threshold.triggered) {
+  console.log(
+    `🛡️ Anti-Nuke: ${options.eventName} ` +
+    `by ${decision.executorId} ` +
+    `(${threshold.count}/${threshold.threshold})`,
+  );
 
-      return {
-        handled: true,
-        triggered: false,
-        executorId: decision.executorId,
-        threshold,
-      };
-    }
-    const enforcement =
+  return {
+    handled: true,
+    triggered: false,
+    executorId: decision.executorId,
+    threshold,
+  };
+}
+
+const enforcement =
   await enforcementService.execute({
     guild,
     executorId: decision.executorId,
-    action: "ban",
+    action: antiNuke.action,
     reason:
       `Anti-Nuke threshold exceeded: ${options.eventName}`,
     dryRun: true,
