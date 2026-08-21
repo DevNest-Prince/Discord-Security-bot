@@ -1,4 +1,10 @@
-import type { Guild } from "discord.js";
+import {
+  enforcementService,
+} from "../enforcement/index.js";
+import {
+  AuditLogEvent,
+  type Guild,
+} from "discord.js";
 
 import { getGuildConfig } from "../../services/guild-config.service.js";
 
@@ -13,8 +19,6 @@ import {
 import type {
   AntiNukeThresholdResult,
 } from "./anti-nuke.types.js";
-
-import { AuditLogEvent } from "discord.js";
 
 export interface HandleAntiNukeEventOptions {
   eventName: string;
@@ -115,7 +119,22 @@ export class AntiNukeService {
         threshold,
       };
     }
+    const enforcement =
+  await enforcementService.execute({
+    guild,
+    executorId: decision.executorId,
+    action: "ban",
+    reason:
+      `Anti-Nuke threshold exceeded: ${options.eventName}`,
+    dryRun: true,
+  });
 
+if (!enforcement.success) {
+  console.warn(
+    `🛡️ Anti-Nuke enforcement blocked in ${guild.id}: ` +
+      enforcement.reason,
+  );
+}
     console.warn(
       `🚨 Anti-Nuke threshold triggered in ${guild.id}: ` +
       `${options.eventName} by ${decision.executorId} ` +
