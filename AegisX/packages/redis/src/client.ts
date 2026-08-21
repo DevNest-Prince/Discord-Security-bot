@@ -1,12 +1,8 @@
 import { createClient } from "redis";
 
-let redisClient: ReturnType<typeof createClient> | null = null;
+export let redisClient: ReturnType<typeof createClient> | null = null;
 
 export async function connectRedis() {
-  if (redisClient?.isOpen) {
-    return redisClient;
-  }
-
   const url = process.env.REDIS_URL;
 
   if (!url) {
@@ -17,28 +13,28 @@ export async function connectRedis() {
     url,
   });
 
-  redisClient.on("error", (error: unknown) => {
+  redisClient.on("error", (error) => {
     console.error("❌ Redis error:", error);
   });
 
-  redisClient.on("connect", () => {
-    console.log("🔄 Connecting to Redis...");
-  });
-
-  redisClient.on("ready", () => {
-    console.log("⚡ Redis is ready!");
-  });
+  console.log("🔄 Connecting to Redis...");
 
   await redisClient.connect();
 
-  return redisClient;
+  console.log("⚡ Redis is ready!");
 }
 
 export async function disconnectRedis() {
   if (redisClient?.isOpen) {
     await redisClient.quit();
     redisClient = null;
-
-    console.log("🔌 Redis disconnected.");
   }
+}
+
+export function getRedisClient() {
+  if (!redisClient) {
+    throw new Error("Redis client is not initialized.");
+  }
+
+  return redisClient;
 }
