@@ -1,108 +1,53 @@
+import {
+  clearAntiNukeCounter,
+  clearGuildAntiNukeCounters,
+  incrementAntiNukeCounter,
+} from "@aegisx/redis";
+
 import type {
   AntiNukeAction,
   AntiNukeThresholdResult,
   AntiNukeTrackerOptions,
 } from "./anti-nuke.types.js";
 
-interface CounterState {
-  timestamps: number[];
-}
-
 export class AntiNukeTracker {
-  private readonly counters = new Map<
-    string,
-    CounterState
-  >();
-
-  record(
+  async record(
     options: AntiNukeTrackerOptions,
-  ): AntiNukeThresholdResult {
-    const key = this.createKey(
-      options.guildId,
-      options.executorId,
-      options.securityAction,
-    );
-
-    const now = Date.now();
-    const windowMs =
-      options.windowSeconds * 1000;
-
-    const state =
-      this.counters.get(key) ?? {
-        timestamps: [],
-      };
-
-    state.timestamps = state.timestamps.filter(
-      (timestamp) =>
-        now - timestamp <= windowMs,
-    );
-
-    state.timestamps.push(now);
-
-    this.counters.set(key, state);
+  ): Promise<AntiNukeThresholdResult> {
+    const result =
+      await incrementAntiNukeCounter(
+        options.guildId,
+        options.executorId,
+        options.securityAction,
+        options.windowSeconds,
+      );
 
     return {
-      count: state.timestamps.length,
+      count: result.count,
       threshold: options.threshold,
       triggered:
-        state.timestamps.length >=
-        options.threshold,
+        result.count >= options.threshold,
     };
   }
 
-  clear(
+  async clear(
     guildId: string,
     executorId: string,
     securityAction: AntiNukeAction,
-  ): void {
-    this.counters.delete(
-      this.createKey(
-        guildId,
-        executorId,
-        securityAction,
-      ),
-    );
-  }
-
-  clearGuild(guildId: string): void {
-    const prefix = `${guildId}:`;
-
-    for (const key of this.counters.keys()) {
-      if (key.startsWith(prefix)) {
-        this.counters.delete(key);
-      }
-    }
-  }
-
-  clearExpired(
-    windowSeconds: number,
-  ): void {
-    const now = Date.now();
-    const windowMs =
-      windowSeconds * 1000;
-
-    for (const [key, state] of this.counters) {
-      state.timestamps = state.timestamps.filter(
-        (timestamp) =>
-          now - timestamp <= windowMs,
-      );
-
-      if (state.timestamps.length === 0) {
-        this.counters.delete(key);
-      }
-    }
-  }
-
-  private createKey(
-    guildId: string,
-    executorId: string,
-    securityAction: AntiNukeAction,
-  ): string {
-    return [
+  ): Promise<void> {
+    await clearAntiNukeCounter(
       guildId,
       executorId,
       securityAction,
-    ].join(":");
+    );
+  }
+
+  async clearGuild(
+    guildId: string,
+  ): Promise<void> {
+    await clearGuildAntiNukeCounters(
+      guildId,
+    );
   }
 }
 

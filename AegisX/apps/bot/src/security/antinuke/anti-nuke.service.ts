@@ -93,7 +93,7 @@ export class AntiNukeService {
     }
 
     const threshold =
-     antiNukeTracker.record({
+     await antiNukeTracker.record({
       guildId: guild.id,
       executorId: decision.executorId,
       securityAction: "ban",
