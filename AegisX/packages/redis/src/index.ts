@@ -12,3 +12,10 @@ export {
 export {
   getRedisClient,
 } from "./client.js";
+
+export {
+  incrementAntiNukeCounter,
+  clearAntiNukeCounter,
+  clearGuildAntiNukeCounters,
+  type AntiNukeCounterResult,
+} from "./anti-nuke.js";
