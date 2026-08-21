@@ -37,9 +37,9 @@ export class AntiNukeService {
     const config = await getGuildConfig(guild.id);
 
     const antiNuke =
-      config.security?.antiNuke;
+  config.security?.antiNuke;
 
-    if (!antiNuke.enabled) {
+if (!antiNuke || !antiNuke.enabled) {
       return {
         handled: false,
         triggered: false,
