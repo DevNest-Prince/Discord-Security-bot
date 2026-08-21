@@ -7,23 +7,26 @@ import {
   setGuildConfigCache,
 } from "@aegisx/redis";
 
-export async function getGuildConfig(guildId: string) {
-  // 1. Redis first
+type GuildSecurityConfig = Awaited<
+  ReturnType<typeof getMongoGuildConfig>
+>;
+
+export async function getGuildConfig(
+  guildId: string,
+): Promise<GuildSecurityConfig> {
   const cached =
-    await getGuildConfigCache(guildId);
+    await getGuildConfigCache<GuildSecurityConfig>(guildId);
 
   if (cached) {
     console.log(`⚡ Guild config cache hit: ${guildId}`);
     return cached;
   }
 
-  // 2. MongoDB fallback
   console.log(`🗄️ Guild config cache miss: ${guildId}`);
 
   const config =
     await getMongoGuildConfig(guildId);
 
-  // 3. Store in Redis
   await setGuildConfigCache(guildId, config);
 
   return config;
