@@ -1,12 +1,6 @@
 import mongoose from "mongoose";
 
-let isConnected = false;
-
 export async function connectDatabase(): Promise<void> {
-  if (isConnected) {
-    return;
-  }
-
   const uri = process.env.MONGODB_URI;
   const dbName = process.env.MONGODB_DB_NAME;
 
@@ -22,19 +16,9 @@ export async function connectDatabase(): Promise<void> {
     dbName,
   });
 
-  isConnected = true;
-
   console.log(`✅ MongoDB connected: ${dbName}`);
 }
 
 export async function disconnectDatabase(): Promise<void> {
-  if (!isConnected) {
-    return;
-  }
-
   await mongoose.disconnect();
-
-  isConnected = false;
-
-  console.log("🔌 MongoDB disconnected.");
 }
