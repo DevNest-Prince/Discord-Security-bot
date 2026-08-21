@@ -33,7 +33,7 @@ export class SecurityDecisionService {
     options: SecurityDecisionOptions,
   ): Promise<SecurityDecision> {
     const audit =
-      await auditLogService.findRecentEntry(
+  await auditLogService.findSecurityEntry(
         guild,
         {
           eventName: options.eventName,

@@ -23,14 +23,14 @@ export interface AuditLogResult {
   executorId: string | null;
 }
 
-const DEFAULT_MAX_AGE_MS = 60 * 60 * 1000;
+const DEFAULT_MAX_AGE_MS = 10_000;
 const DEFAULT_LIMIT = 5;
 
 export class AuditLogService {
   private readonly rateLimiter =
     new AuditLogRateLimiter();
 
-  async findRecentEntry(
+  async findSecurityEntry(
     guild: Guild,
     options: FindAuditLogOptions,
   ): Promise<AuditLogResult | null> {
@@ -70,27 +70,30 @@ export class AuditLogService {
         const ageMs =
           now - entry.createdTimestamp;
 
-        if (ageMs < 0 || ageMs > maxAgeMs) {
+        if (
+          ageMs < 0 ||
+          ageMs > maxAgeMs
+        ) {
           continue;
         }
 
         if (
-        options.targetId !== undefined &&
-        entry.targetId !== options.targetId
-     ) {
-       continue;
-    } 
+          options.targetId !== undefined &&
+          entry.targetId !== options.targetId
+        ) {
+          continue;
+        }
 
         return {
-         entry,
-         executorId: entry.executorId,
+          entry,
+          executorId: entry.executorId,
         };
       }
 
       return null;
     } catch (error) {
       console.error(
-        `Failed to fetch audit logs for guild ${guild.id}:`,
+        `Failed to fetch security audit logs for guild ${guild.id}:`,
         error,
       );
 
