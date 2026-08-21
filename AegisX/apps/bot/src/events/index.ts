@@ -10,10 +10,10 @@ export function registerEvents(
   registerClientReadyEvent(client);
   registerGuildCreateEvent(client);
 
-  client.on("guildBanAdd", async (ban) => {
-    await handleGuildBanAdd(
-      ban.guild,
-      ban.user.id,
-    );
-  });
+  client.on("guildBanAdd", (ban) => {
+  void handleGuildBanAdd(
+    ban.guild,
+    ban.user.id,
+  );
+});
 }
