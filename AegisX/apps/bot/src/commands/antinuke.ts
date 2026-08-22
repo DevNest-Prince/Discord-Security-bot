@@ -6,7 +6,10 @@ import {
   ButtonBuilder,
   ButtonStyle,
   PermissionFlagsBits,
+  type Message,
+  type Role,
 } from "discord.js";
+
 import { getGuildConfig, updateAntiNukeConfig } from "@aegisx/database";
 import { deleteGuildConfigCache } from "@aegisx/redis";
 
@@ -182,4 +185,77 @@ export const antinukeCommand = {
       });
     }
   },
+
+  async executePrefix(message: Message, args: string[]): Promise<void> {
+    if (!message.guild || !message.member) return;
+    const guild = message.guild;
+    const authorId = message.author.id;
+
+    const config = await getGuildConfig(guild.id);
+    const isOwner = guild.ownerId === authorId;
+    const isExtraOwner = config.security?.extraOwners?.includes(authorId);
+
+    if (!isOwner && !isExtraOwner) {
+      await message.reply("❌ **Access Denied**: Only Server Owner or Extra-Owners can configure Anti-Nuke.");
+      return;
+    }
+
+    const sub = args[0]?.toLowerCase();
+
+    if (sub === "enable") {
+      let supremeRole = guild.roles.cache.find((r: Role) => r.name === "AegisX Supreme™");
+      if (!supremeRole) {
+
+        try {
+          supremeRole = await guild.roles.create({
+            name: "AegisX Supreme™",
+            color: 0xff0033,
+            hoist: true,
+            permissions: [PermissionFlagsBits.Administrator],
+            reason: "AegisX Supreme Anti-Nuke Role",
+          });
+          const botMember = guild.members.me;
+          if (botMember) await botMember.roles.add(supremeRole);
+        } catch {
+          // Continue
+        }
+      }
+
+      await updateAntiNukeConfig(guild.id, { enabled: true, action: "ban", recoveryEnabled: true });
+      await deleteGuildConfigCache(guild.id);
+
+      const embed = new EmbedBuilder()
+        .setTitle(`Security Settings for ${guild.name}`)
+        .setColor(0x00ff00)
+        .setDescription(
+          `🛡️ **Anti-Nuke protection has been ENABLED!**\n\n` +
+          `• Punishment Action: \`BAN\`\n` +
+          `• Automated Disaster Recovery: \`ACTIVE\`\n` +
+          `• Supreme Defense: \`ENABLED\`\n\n` +
+          `*To whitelist trusted staff members, use \`>whitelist add @user\`.*`,
+        );
+
+      await message.reply({ embeds: [embed] });
+    } else if (sub === "disable") {
+      await updateAntiNukeConfig(guild.id, { enabled: false });
+      await deleteGuildConfigCache(guild.id);
+      await message.reply("🔴 **Anti-Nuke protection has been disabled.**");
+    } else {
+      const antiNuke = config.security?.antiNuke;
+      const isEnabled = antiNuke?.enabled ?? false;
+
+      const embed = new EmbedBuilder()
+        .setTitle(`🛡️ Security Configuration — ${guild.name}`)
+        .setColor(isEnabled ? 0x00ff00 : 0xff0000)
+        .addFields(
+          { name: "Status", value: isEnabled ? "🟢 **ENABLED**" : "🔴 **DISABLED**", inline: true },
+          { name: "Punishment Action", value: `\`${antiNuke?.action?.toUpperCase() ?? "BAN"}\``, inline: true },
+          { name: "Auto-Recovery", value: antiNuke?.recoveryEnabled !== false ? "✅ Enabled" : "❌ Disabled", inline: true },
+        )
+        .setFooter({ text: "Use >antinuke enable / >antinuke disable to toggle" });
+
+      await message.reply({ embeds: [embed] });
+    }
+  },
 };
+

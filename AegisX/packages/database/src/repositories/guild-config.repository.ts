@@ -4,6 +4,9 @@ import {
   type WhitelistPermissions,
   type AntiNukeConfig,
   type AutomodConfig,
+  type EmergencyConfig,
+  type AntiBetrayConfig,
+  type LimitsConfig,
   type LoggingConfig,
   type AutoRoleConfig,
   type VerificationConfig,
@@ -12,6 +15,7 @@ import {
   type TicketConfig,
   type LevelingConfig,
 } from "../models/GuildConfig.js";
+
 
 export async function findGuildConfig(
   guildId: string,
@@ -401,4 +405,69 @@ export async function updateLevelingConfig(
 
   if (!config) throw new Error(`Failed to update leveling in ${guildId}`);
   return config;
-}
+}
+
+export async function updateEmergencyConfig(
+  guildId: string,
+  data: Partial<EmergencyConfig>,
+): Promise<GuildConfig> {
+  const updateQuery: Record<string, unknown> = {};
+  if (data.enabled !== undefined) updateQuery["emergency.enabled"] = data.enabled;
+  if (data.autoEmergency !== undefined) updateQuery["emergency.autoEmergency"] = data.autoEmergency;
+  if (data.lockedChannels !== undefined) updateQuery["emergency.lockedChannels"] = data.lockedChannels;
+  if (data.snapshot !== undefined) updateQuery["emergency.snapshot"] = data.snapshot;
+
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: updateQuery },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+
+  if (!config) throw new Error(`Failed to update emergency config in ${guildId}`);
+  return config;
+}
+
+export async function updateAntiBetrayConfig(
+  guildId: string,
+  data: Partial<AntiBetrayConfig>,
+): Promise<GuildConfig> {
+  const updateQuery: Record<string, unknown> = {};
+  if (data.enabled !== undefined) updateQuery["antiBetray.enabled"] = data.enabled;
+  if (data.maxSuspiciousActions !== undefined) updateQuery["antiBetray.maxSuspiciousActions"] = data.maxSuspiciousActions;
+  if (data.action !== undefined) updateQuery["antiBetray.action"] = data.action;
+  if (data.logChannelId !== undefined) updateQuery["antiBetray.logChannelId"] = data.logChannelId;
+
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: updateQuery },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+
+  if (!config) throw new Error(`Failed to update anti-betray config in ${guildId}`);
+  return config;
+}
+
+export async function updateLimitsConfig(
+  guildId: string,
+  data: Partial<LimitsConfig>,
+): Promise<GuildConfig> {
+  const updateQuery: Record<string, unknown> = {};
+  if (data.enabled !== undefined) updateQuery["limits.enabled"] = data.enabled;
+  if (data.limits !== undefined) updateQuery["limits.limits"] = data.limits;
+
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: updateQuery },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+
+  if (!config) throw new Error(`Failed to update limits config in ${guildId}`);
+  return config;
+}
+

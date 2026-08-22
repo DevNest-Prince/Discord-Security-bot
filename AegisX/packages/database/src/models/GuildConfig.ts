@@ -112,11 +112,51 @@ export interface LevelingConfig {
   levelImage: string | null;
 }
 
+export interface ChannelOverwriteSnapshot {
+  id: string;
+  type: number;
+  allow: string;
+  deny: string;
+}
+
+export interface ChannelSnapshotData {
+  channelId: string;
+  overwrites: ChannelOverwriteSnapshot[];
+}
+
+export interface EmergencyConfig {
+  enabled: boolean;
+  autoEmergency: boolean;
+  lockedChannels: string[];
+  snapshot: ChannelSnapshotData[];
+}
+
+export interface AntiBetrayConfig {
+  enabled: boolean;
+  maxSuspiciousActions: number;
+  action: "demote" | "ban" | "strip_roles";
+  logChannelId: string | null;
+}
+
+export interface ActionLimitSetting {
+  count: number;
+  windowSeconds: number;
+  action: "ban" | "kick" | "strip_roles" | "timeout";
+}
+
+export interface LimitsConfig {
+  enabled: boolean;
+  limits: Record<string, ActionLimitSetting>;
+}
+
 export interface GuildConfig {
   guildId: string;
   prefix: string;
   security: SecurityConfig;
   automod: AutomodConfig;
+  emergency: EmergencyConfig;
+  antiBetray: AntiBetrayConfig;
+  limits: LimitsConfig;
   logging: LoggingConfig;
   autorole: AutoRoleConfig;
   verification: VerificationConfig;
@@ -127,6 +167,7 @@ export interface GuildConfig {
 }
 
 export type GuildConfigDocument = GuildConfig & Document;
+
 
 const WhitelistPermissionsSchema = new Schema<WhitelistPermissions>(
   {
@@ -205,7 +246,63 @@ const AutomodSchema = new Schema<AutomodConfig>(
   { _id: false },
 );
 
+const ChannelOverwriteSnapshotSchema = new Schema<ChannelOverwriteSnapshot>(
+  {
+    id: { type: String, required: true },
+    type: { type: Number, required: true },
+    allow: { type: String, required: true },
+    deny: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const ChannelSnapshotDataSchema = new Schema<ChannelSnapshotData>(
+  {
+    channelId: { type: String, required: true },
+    overwrites: { type: [ChannelOverwriteSnapshotSchema], default: [] },
+  },
+  { _id: false },
+);
+
+const EmergencySchema = new Schema<EmergencyConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    autoEmergency: { type: Boolean, default: true },
+    lockedChannels: { type: [String], default: [] },
+    snapshot: { type: [ChannelSnapshotDataSchema], default: [] },
+  },
+  { _id: false },
+);
+
+const AntiBetraySchema = new Schema<AntiBetrayConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    maxSuspiciousActions: { type: Number, default: 3 },
+    action: { type: String, enum: ["demote", "ban", "strip_roles"], default: "demote" },
+    logChannelId: { type: String, default: null },
+  },
+  { _id: false },
+);
+
+const ActionLimitSettingSchema = new Schema<ActionLimitSetting>(
+  {
+    count: { type: Number, default: 3 },
+    windowSeconds: { type: Number, default: 60 },
+    action: { type: String, enum: ["ban", "kick", "strip_roles", "timeout"], default: "ban" },
+  },
+  { _id: false },
+);
+
+const LimitsSchema = new Schema<LimitsConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    limits: { type: Map, of: ActionLimitSettingSchema, default: () => new Map() },
+  },
+  { _id: false },
+);
+
 const LoggingSchema = new Schema<LoggingConfig>(
+
   {
     logEnabled: { type: Map, of: Boolean, default: () => new Map() },
     logChannels: { type: Map, of: String, default: () => new Map() },
@@ -318,7 +415,20 @@ const GuildConfigSchema = new Schema<GuildConfig>(
       type: AutomodSchema,
       default: () => ({}),
     },
+    emergency: {
+      type: EmergencySchema,
+      default: () => ({}),
+    },
+    antiBetray: {
+      type: AntiBetraySchema,
+      default: () => ({}),
+    },
+    limits: {
+      type: LimitsSchema,
+      default: () => ({}),
+    },
     logging: {
+
       type: LoggingSchema,
       default: () => ({}),
     },

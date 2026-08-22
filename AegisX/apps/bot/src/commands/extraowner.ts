@@ -6,7 +6,9 @@ import {
   ButtonBuilder,
   ButtonStyle,
   PermissionFlagsBits,
+  type Message,
 } from "discord.js";
+
 import {
   getGuildConfig,
   setExtraOwner,
@@ -169,4 +171,47 @@ export const extraownerCommand = {
       });
     }
   },
+
+  async executePrefix(message: Message, args: string[]): Promise<void> {
+    if (!message.guild || !message.member) return;
+    const guild = message.guild;
+    const isOwner = guild.ownerId === message.author.id;
+
+    if (!isOwner) {
+      await message.reply("❌ **Access Denied**: Only the primary Server Owner can manage Extra Owners.");
+      return;
+    }
+
+    const sub = args[0]?.toLowerCase();
+    const targetUser = message.mentions.users.first() || (args[1] ? await message.client.users.fetch(args[1]).catch(() => null) : null);
+    const config = await getGuildConfig(guild.id);
+
+    if (sub === "set" && targetUser) {
+      await setExtraOwner(guild.id, targetUser.id);
+      await deleteGuildConfigCache(guild.id);
+      await message.reply(`✅ **${targetUser.tag}** has been appointed as an **Extra Owner**.`);
+    } else if (sub === "remove" && targetUser) {
+      await removeExtraOwner(guild.id, targetUser.id);
+      await deleteGuildConfigCache(guild.id);
+      await message.reply(`✅ **${targetUser.tag}** has been removed from Extra Owners.`);
+    } else if (sub === "reset") {
+      await resetExtraOwners(guild.id);
+      await deleteGuildConfigCache(guild.id);
+      await message.reply("✅ All Extra Owners cleared.");
+    } else {
+      const extraOwners = config.security?.extraOwners ?? [];
+      if (extraOwners.length === 0) {
+        await message.reply("ℹ️ No Extra Owners assigned. Use `>extraowner set @user`.");
+        return;
+      }
+
+      const lines = extraOwners.map((id) => `• <@${id}> (\`${id}\`)`).join("\n");
+      const embed = new EmbedBuilder()
+        .setTitle(`👑 Extra Owners — ${guild.name}`)
+        .setColor(0x00ff00)
+        .setDescription(lines);
+      await message.reply({ embeds: [embed] });
+    }
+  },
 };
+

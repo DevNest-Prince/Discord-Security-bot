@@ -4,7 +4,9 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   ChannelType,
+  type Message,
 } from "discord.js";
+
 import {
   getGuildConfig,
   updateAutomodConfig,
@@ -241,4 +243,36 @@ export const automodCommand = {
       await interaction.reply({ embeds: [embed] });
     }
   },
+
+  async executePrefix(message: Message, args: string[]): Promise<void> {
+    if (!message.guild || !message.member) return;
+    const guild = message.guild;
+
+    if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      await message.reply("❌ You need Administrator permission to configure AutoMod.");
+      return;
+    }
+
+    const sub = args[0]?.toLowerCase();
+    const config = await getGuildConfig(guild.id);
+
+    if (sub === "enable") {
+      await updateAutomodConfig(guild.id, { enabled: true });
+      await deleteGuildConfigCache(guild.id);
+      await message.reply("✅ **AutoMod protection has been ENABLED!**");
+    } else if (sub === "disable") {
+      await updateAutomodConfig(guild.id, { enabled: false });
+      await deleteGuildConfigCache(guild.id);
+      await message.reply("🔴 **AutoMod protection has been disabled.**");
+    } else {
+      const automod = config.automod;
+      const isEnabled = automod?.enabled ?? false;
+      const embed = new EmbedBuilder()
+        .setTitle(`🛡️ AutoMod Configuration — ${guild.name}`)
+        .setColor(isEnabled ? 0x00ff00 : 0xff0000)
+        .setDescription(`Status: ${isEnabled ? "🟢 **ENABLED**" : "🔴 **DISABLED**"}\nUse \`>automod enable\` or \`>automod disable\` to toggle.`);
+      await message.reply({ embeds: [embed] });
+    }
+  },
 };
+

@@ -8,7 +8,9 @@ import {
   ButtonStyle,
   PermissionFlagsBits,
   ComponentType,
+  type Message,
 } from "discord.js";
+
 import {
   getGuildConfig,
   setWhitelistedUser,
@@ -214,4 +216,59 @@ export const whitelistCommand = {
       });
     }
   },
+
+  async executePrefix(message: Message, args: string[]): Promise<void> {
+    if (!message.guild || !message.member) return;
+    const guild = message.guild;
+    const authorId = message.author.id;
+
+    const config = await getGuildConfig(guild.id);
+    const isOwner = guild.ownerId === authorId;
+    const isExtraOwner = config.security?.extraOwners?.includes(authorId);
+
+    if (!isOwner && !isExtraOwner) {
+      await message.reply("❌ **Access Denied**: Only Server Owner or Extra-Owners can manage whitelist.");
+      return;
+    }
+
+    const sub = args[0]?.toLowerCase();
+    const targetUser = message.mentions.users.first() || (args[1] ? await message.client.users.fetch(args[1]).catch(() => null) : null);
+
+    if (sub === "add" && targetUser) {
+      // Whitelist all permissions by default via prefix
+      const allPerms = {
+        ban: true, kick: true, prune: true, botadd: true,
+        serverup: true, memup: true, chcr: true, chdl: true,
+        chup: true, rlcr: true, rlup: true, rldl: true,
+        meneve: true, mngweb: true, mngstemo: true,
+      };
+      await setWhitelistedUser(guild.id, targetUser.id, allPerms);
+      await deleteGuildConfigCache(guild.id);
+      await message.reply(`✅ **${targetUser.tag}** has been granted full Anti-Nuke whitelist bypass.`);
+    } else if (sub === "remove" && targetUser) {
+      await removeWhitelistedUser(guild.id, targetUser.id);
+      await deleteGuildConfigCache(guild.id);
+      await message.reply(`✅ **${targetUser.tag}** has been removed from the whitelist.`);
+    } else if (sub === "reset") {
+      await resetWhitelistedUsers(guild.id);
+      await deleteGuildConfigCache(guild.id);
+      await message.reply("✅ All whitelisted users cleared.");
+    } else {
+      const whitelistedUsers = (config.security?.whitelistedUsers as any) ?? {};
+      const userIds = Object.keys(whitelistedUsers);
+
+      if (userIds.length === 0) {
+        await message.reply("ℹ️ No whitelisted users found. Use `>whitelist add @user`.");
+        return;
+      }
+
+      const lines = userIds.map((id) => `• <@${id}> (\`${id}\`)`);
+      const embed = new EmbedBuilder()
+        .setTitle(`🛡️ Whitelisted Users (${userIds.length}) — ${guild.name}`)
+        .setColor(0x00ff00)
+        .setDescription(lines.join("\n"));
+      await message.reply({ embeds: [embed] });
+    }
+  },
 };
+

@@ -1,9 +1,30 @@
 import { REST, Routes } from "discord.js";
 import {
+  helpCommand,
   antinukeCommand,
   whitelistCommand,
   extraownerCommand,
   automodCommand,
+  emergencyCommand,
+  antibetrayCommand,
+  limitCommand,
+  banCommand,
+  unbanCommand,
+  kickCommand,
+  muteCommand,
+  unmuteCommand,
+  lockCommand,
+  unlockCommand,
+  hideCommand,
+  unhideCommand,
+  nukeCommand,
+  purgeCommand,
+  vckickCommand,
+  vcmuteCommand,
+  vcunmuteCommand,
+  pingCommand,
+  serverinfoCommand,
+  botinfoCommand,
 } from "./index.js";
 
 export async function registerSlashCommands(
@@ -13,11 +34,33 @@ export async function registerSlashCommands(
 ): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(token);
   const commandData = [
+    helpCommand.data.toJSON(),
     antinukeCommand.data.toJSON(),
     whitelistCommand.data.toJSON(),
     extraownerCommand.data.toJSON(),
     automodCommand.data.toJSON(),
+    emergencyCommand.data.toJSON(),
+    antibetrayCommand.data.toJSON(),
+    limitCommand.data.toJSON(),
+    banCommand.data.toJSON(),
+    unbanCommand.data.toJSON(),
+    kickCommand.data.toJSON(),
+    muteCommand.data.toJSON(),
+    unmuteCommand.data.toJSON(),
+    lockCommand.data.toJSON(),
+    unlockCommand.data.toJSON(),
+    hideCommand.data.toJSON(),
+    unhideCommand.data.toJSON(),
+    nukeCommand.data.toJSON(),
+    purgeCommand.data.toJSON(),
+    vckickCommand.data.toJSON(),
+    vcmuteCommand.data.toJSON(),
+    vcunmuteCommand.data.toJSON(),
+    pingCommand.data.toJSON(),
+    serverinfoCommand.data.toJSON(),
+    botinfoCommand.data.toJSON(),
   ];
+
 
   try {
     console.log(`⏳ Registering ${commandData.length} application (/) commands...`);

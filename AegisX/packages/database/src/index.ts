@@ -21,6 +21,12 @@ export {
   type AntiNukeConfig,
   type SecurityConfig,
   type AutomodConfig,
+  type EmergencyConfig,
+  type AntiBetrayConfig,
+  type LimitsConfig,
+  type ActionLimitSetting,
+  type ChannelOverwriteSnapshot,
+  type ChannelSnapshotData,
   type LoggingConfig,
   type AutoRoleConfig,
   type VerificationConfig,
@@ -43,6 +49,9 @@ export {
   removeExtraOwner,
   resetExtraOwners,
   updateAutomodConfig,
+  updateEmergencyConfig,
+  updateAntiBetrayConfig,
+  updateLimitsConfig,
   updateLoggingConfig,
   updateAutoRoleConfig,
   updateVerificationConfig,
@@ -56,4 +65,5 @@ export {
 
 export {
   getGuildConfig as getSecurityGuildConfig,
-} from "./services/guild-config.service.js";
+} from "./services/guild-config.service.js";
+
