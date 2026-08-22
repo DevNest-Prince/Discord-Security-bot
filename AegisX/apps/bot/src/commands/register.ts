@@ -25,7 +25,20 @@ import {
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
+  autoroleCommand,
+  welcomeCommand,
+  verificationCommand,
+  vanityrolesCommand,
+  ticketsCommand,
+  levelingCommand,
+  loggingCommand,
+  customrolesCommand,
+  j2cCommand,
+  autoreactCommand,
+  joindmCommand,
+  backupCommand,
 } from "./index.js";
+
 
 export async function registerSlashCommands(
   token: string,
@@ -59,7 +72,20 @@ export async function registerSlashCommands(
     pingCommand.data.toJSON(),
     serverinfoCommand.data.toJSON(),
     botinfoCommand.data.toJSON(),
+    autoroleCommand.data.toJSON(),
+    welcomeCommand.data.toJSON(),
+    verificationCommand.data.toJSON(),
+    vanityrolesCommand.data.toJSON(),
+    ticketsCommand.data.toJSON(),
+    levelingCommand.data.toJSON(),
+    loggingCommand.data.toJSON(),
+    customrolesCommand.data.toJSON(),
+    j2cCommand.data.toJSON(),
+    autoreactCommand.data.toJSON(),
+    joindmCommand.data.toJSON(),
+    backupCommand.data.toJSON(),
   ];
+
 
 
   try {

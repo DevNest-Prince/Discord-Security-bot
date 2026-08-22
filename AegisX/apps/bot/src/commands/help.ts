@@ -104,6 +104,27 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     ],
   },
   {
+    id: "management",
+    name: "Server Management",
+    emoji: "🎭",
+    description: "AutoRole, Welcomer, Verification, Vanity Roles, Tickets, Leveling & Backups",
+    commands: [
+      { name: "autorole", description: "Auto-assign human and bot roles upon joining", usage: "autorole <humans|bots> <add|remove|show> <@role>" },
+      { name: "welcome", description: "Configure custom welcome greeting channel and embeds", usage: "welcome <channel|message|type|test|disable>" },
+      { name: "verification", description: "Deploy 1-click button verification gatekeeper panel", usage: "verification setup <#channel> <@role>" },
+      { name: "vanityrole", description: "Reward members with custom status vanity triggers", usage: "vanityrole <set|remove|list> <vanity> <@role>" },
+      { name: "ticket", description: "Deploy interactive support ticket panel with transcripts", usage: "ticket panel <#channel> <@staffRole>" },
+      { name: "rank / level", description: "View your current XP, level, and server rank", usage: "rank [@user]" },
+      { name: "leaderboard", description: "Display top server members ranked by chat XP", usage: "leaderboard" },
+      { name: "logging", description: "Configure audit logging channels per event type", usage: "logging <set|all|status> <event> <#channel>" },
+      { name: "invcrole", description: "Auto-grant roles while connected to voice channels", usage: "invcrole <set|disable> <@role>" },
+      { name: "j2c", description: "Join-to-Create dynamic temporary voice channels", usage: "j2c <setup|disable> <#channel>" },
+      { name: "autoreact", description: "Auto-react custom emojis to new messages in channels", usage: "autoreact <add|remove> <#channel> <emoji>" },
+      { name: "joindm", description: "Send custom welcome direct message to new members", usage: "joindm <set|disable> <message>" },
+      { name: "backup", description: "Create & restore full server channel/role snapshots", usage: "backup <create|load|list|delete> [id]" },
+    ],
+  },
+  {
     id: "voice",
     name: "Voice & VcBan",
     emoji: "🎙️",
@@ -130,6 +151,7 @@ export const HELP_CATEGORIES: HelpCategory[] = [
     ],
   },
 ];
+
 
 export function buildOverviewEmbed(prefix: string, botUser: any): EmbedBuilder {
   const totalCommands = HELP_CATEGORIES.reduce((acc, cat) => acc + cat.commands.length, 0);

@@ -149,6 +149,36 @@ export interface LimitsConfig {
   limits: Record<string, ActionLimitSetting>;
 }
 
+export interface J2CConfig {
+
+  enabled: boolean;
+  hubChannelId: string | null;
+  categoryId: string | null;
+  defaultName: string;
+  defaultLimit: number;
+}
+
+export interface InVcRoleConfig {
+  enabled: boolean;
+  roleId: string | null;
+}
+
+export interface AutoReactRule {
+  channelId: string;
+  emojis: string[];
+}
+
+export interface JoinDmConfig {
+  enabled: boolean;
+  message: string | null;
+}
+
+export interface CustomRoleConfig {
+  name: string;
+  roleId: string;
+  requiredRoleId?: string | null;
+}
+
 export interface GuildConfig {
   guildId: string;
   prefix: string;
@@ -164,9 +194,15 @@ export interface GuildConfig {
   welcome: WelcomeConfig;
   tickets: TicketConfig;
   leveling: LevelingConfig;
+  j2c: J2CConfig;
+  inVcRole: InVcRoleConfig;
+  autoReact: AutoReactRule[];
+  joinDm: JoinDmConfig;
+  customRoles: CustomRoleConfig[];
 }
 
 export type GuildConfigDocument = GuildConfig & Document;
+
 
 
 const WhitelistPermissionsSchema = new Schema<WhitelistPermissions>(
@@ -395,6 +431,50 @@ const LevelingSchema = new Schema<LevelingConfig>(
   { _id: false },
 );
 
+const J2CSchema = new Schema<J2CConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    hubChannelId: { type: String, default: null },
+    categoryId: { type: String, default: null },
+    defaultName: { type: String, default: "🔊 {user}'s Room" },
+    defaultLimit: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+const InVcRoleSchema = new Schema<InVcRoleConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    roleId: { type: String, default: null },
+  },
+  { _id: false },
+);
+
+const AutoReactSchema = new Schema<AutoReactRule>(
+  {
+    channelId: { type: String, required: true },
+    emojis: { type: [String], default: [] },
+  },
+  { _id: false },
+);
+
+const JoinDmSchema = new Schema<JoinDmConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    message: { type: String, default: null },
+  },
+  { _id: false },
+);
+
+const CustomRoleSchema = new Schema<CustomRoleConfig>(
+  {
+    name: { type: String, required: true },
+    roleId: { type: String, required: true },
+    requiredRoleId: { type: String, default: null },
+  },
+  { _id: false },
+);
+
 const GuildConfigSchema = new Schema<GuildConfig>(
   {
     guildId: {
@@ -428,7 +508,6 @@ const GuildConfigSchema = new Schema<GuildConfig>(
       default: () => ({}),
     },
     logging: {
-
       type: LoggingSchema,
       default: () => ({}),
     },
@@ -456,6 +535,26 @@ const GuildConfigSchema = new Schema<GuildConfig>(
       type: LevelingSchema,
       default: () => ({}),
     },
+    j2c: {
+      type: J2CSchema,
+      default: () => ({}),
+    },
+    inVcRole: {
+      type: InVcRoleSchema,
+      default: () => ({}),
+    },
+    autoReact: {
+      type: [AutoReactSchema],
+      default: [],
+    },
+    joinDm: {
+      type: JoinDmSchema,
+      default: () => ({}),
+    },
+    customRoles: {
+      type: [CustomRoleSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,
@@ -465,4 +564,4 @@ const GuildConfigSchema = new Schema<GuildConfig>(
 
 export const GuildConfigModel =
   mongoose.models.GuildConfig ??
-  mongoose.model<GuildConfig>("GuildConfig", GuildConfigSchema);
+  mongoose.model<GuildConfig>("GuildConfig", GuildConfigSchema);

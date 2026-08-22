@@ -470,4 +470,92 @@ export async function updateLimitsConfig(
   if (!config) throw new Error(`Failed to update limits config in ${guildId}`);
   return config;
 }
+
+export async function updateJ2CConfig(
+  guildId: string,
+  data: Record<string, unknown>,
+): Promise<GuildConfig> {
+  const updateQuery: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) updateQuery[`j2c.${k}`] = v;
+  }
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: updateQuery },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+  if (!config) throw new Error(`Failed to update J2C config in ${guildId}`);
+  return config;
+}
+
+export async function updateInVcRoleConfig(
+  guildId: string,
+  data: Record<string, unknown>,
+): Promise<GuildConfig> {
+  const updateQuery: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) updateQuery[`inVcRole.${k}`] = v;
+  }
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: updateQuery },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+  if (!config) throw new Error(`Failed to update InVcRole config in ${guildId}`);
+  return config;
+}
+
+export async function updateAutoReactRules(
+  guildId: string,
+  rules: Array<{ channelId: string; emojis: string[] }>,
+): Promise<GuildConfig> {
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: { autoReact: rules } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+  if (!config) throw new Error(`Failed to update AutoReact rules in ${guildId}`);
+  return config;
+}
+
+export async function updateJoinDmConfig(
+  guildId: string,
+  data: Record<string, unknown>,
+): Promise<GuildConfig> {
+  const updateQuery: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) updateQuery[`joinDm.${k}`] = v;
+  }
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: updateQuery },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+  if (!config) throw new Error(`Failed to update JoinDm config in ${guildId}`);
+  return config;
+}
+
+export async function updateCustomRolesConfig(
+  guildId: string,
+  roles: Array<{ name: string; roleId: string; requiredRoleId?: string | null }>,
+): Promise<GuildConfig> {
+  const config = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: { customRoles: roles } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+  if (!config) throw new Error(`Failed to update CustomRoles in ${guildId}`);
+  return config;
+}
+
 

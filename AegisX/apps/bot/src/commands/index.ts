@@ -8,4 +8,6 @@ export { antibetrayCommand } from "./antibetray.js";
 export { limitCommand } from "./limit.js";
 export * from "./moderation/index.js";
 export * from "./utility/index.js";
+export * from "./management/index.js";
+
 

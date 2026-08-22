@@ -36,7 +36,20 @@ import {
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
+  autoroleCommand,
+  welcomeCommand,
+  verificationCommand,
+  vanityrolesCommand,
+  ticketsCommand,
+  levelingCommand,
+  loggingCommand,
+  customrolesCommand,
+  j2cCommand,
+  autoreactCommand,
+  joindmCommand,
+  backupCommand,
 } from "../commands/index.js";
+
 
 export async function handleMessageCreate(message: Message): Promise<void> {
   if (message.author.bot || !message.guild || !message.member) {
@@ -247,11 +260,74 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       case "stats":
         await botinfoCommand.executePrefix(message);
         break;
+      case "autorole":
+        await autoroleCommand.executePrefix(message, args);
+        break;
+      case "welcome":
+        await welcomeCommand.executePrefix(message, args);
+        break;
+      case "verification":
+      case "verify":
+        await verificationCommand.executePrefix(message, args);
+        break;
+      case "vanityrole":
+      case "vanity":
+        await vanityrolesCommand.executePrefix(message, args);
+        break;
+      case "ticket":
+      case "tickets":
+        await ticketsCommand.executePrefix(message, args);
+        break;
+      case "rank":
+      case "level":
+      case "xp":
+        await levelingCommand.executePrefix(message, args);
+        break;
+      case "leaderboard":
+      case "top":
+      case "lb":
+        await levelingCommand.executePrefix(message, ["leaderboard", ...args]);
+        break;
+      case "logging":
+      case "logs":
+        await loggingCommand.executePrefix(message, args);
+        break;
+      case "invcrole":
+        await customrolesCommand.executePrefix(message, args);
+        break;
+      case "j2c":
+        await j2cCommand.executePrefix(message, args);
+        break;
+      case "autoreact":
+        await autoreactCommand.executePrefix(message, args);
+        break;
+      case "joindm":
+        await joindmCommand.executePrefix(message, args);
+        break;
+      case "backup":
+        await backupCommand.executePrefix(message, args);
+        break;
       default:
         break;
     }
   } catch (cmdErr) {
     console.error("❌ Prefix command execution error:", cmdErr);
   }
+
+  // 6. Handle Leveling XP & AutoReact
+  try {
+    const { handleMessageXp } = await import("../services/management/leveling.service.js");
+    await handleMessageXp(message);
+
+    const guildCfg = await getGuildConfig(message.guild.id);
+    const reactRules = guildCfg.autoReact || [];
+    const matchedRule = reactRules.find((r) => r.channelId === message.channel.id);
+    if (matchedRule && matchedRule.emojis.length > 0) {
+      for (const emoji of matchedRule.emojis) {
+        await message.react(emoji).catch(() => {});
+      }
+    }
+  } catch {}
 }
+
 

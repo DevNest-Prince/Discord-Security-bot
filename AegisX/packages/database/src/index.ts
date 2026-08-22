@@ -35,7 +35,33 @@ export {
   type TicketConfig,
   type TicketCategory,
   type LevelingConfig,
+  type J2CConfig,
+  type InVcRoleConfig,
+  type AutoReactRule,
+  type JoinDmConfig,
+  type CustomRoleConfig,
 } from "./models/GuildConfig.js";
+
+export {
+  UserLevelModel,
+  type UserLevel,
+  type UserLevelDocument,
+} from "./models/UserLevel.js";
+
+export {
+  GuildBackupModel,
+  type GuildBackup,
+  type GuildBackupDocument,
+  type BackupRole,
+  type BackupCategory,
+  type BackupChannel,
+} from "./models/GuildBackup.js";
+
+export {
+  TicketRecordModel,
+  type TicketRecord,
+  type TicketRecordDocument,
+} from "./models/TicketRecord.js";
 
 export {
   findGuildConfig,
@@ -61,9 +87,37 @@ export {
   deleteWelcomeConfig,
   updateTicketConfig,
   updateLevelingConfig,
+  updateJ2CConfig,
+  updateInVcRoleConfig,
+  updateAutoReactRules,
+  updateJoinDmConfig,
+  updateCustomRolesConfig,
 } from "./repositories/guild-config.repository.js";
+
+export {
+  getUserLevel,
+  addMessageXp,
+  getGuildLeaderboard,
+  getUserRank,
+} from "./repositories/leveling.repository.js";
+
+export {
+  createBackup,
+  getBackup,
+  listGuildBackups,
+  deleteBackup,
+} from "./repositories/backup.repository.js";
+
+export {
+  createTicketRecord,
+  getTicketRecordByChannel,
+  closeTicketRecord,
+  claimTicketRecord,
+  getUserOpenTicket,
+} from "./repositories/ticket.repository.js";
 
 export {
   getGuildConfig as getSecurityGuildConfig,
 } from "./services/guild-config.service.js";
+
 

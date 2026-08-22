@@ -25,7 +25,24 @@ import {
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
+  autoroleCommand,
+  welcomeCommand,
+  verificationCommand,
+  vanityrolesCommand,
+  ticketsCommand,
+  levelingCommand,
+  loggingCommand,
+  customrolesCommand,
+  j2cCommand,
+  autoreactCommand,
+  joindmCommand,
+  backupCommand,
 } from "../commands/index.js";
+import { handleVerificationInteraction } from "../services/management/verification.service.js";
+import {
+  handleTicketCreateInteraction,
+  handleTicketButtonInteraction,
+} from "../services/management/tickets.service.js";
 
 const commands = new Map<string, any>([
   [helpCommand.data.name, helpCommand],
@@ -53,31 +70,62 @@ const commands = new Map<string, any>([
   [pingCommand.data.name, pingCommand],
   [serverinfoCommand.data.name, serverinfoCommand],
   [botinfoCommand.data.name, botinfoCommand],
+  [autoroleCommand.data.name, autoroleCommand],
+  [welcomeCommand.data.name, welcomeCommand],
+  [verificationCommand.data.name, verificationCommand],
+  [vanityrolesCommand.data.name, vanityrolesCommand],
+  [ticketsCommand.data.name, ticketsCommand],
+  [levelingCommand.data.name, levelingCommand],
+  [loggingCommand.data.name, loggingCommand],
+  [customrolesCommand.data.name, customrolesCommand],
+  [j2cCommand.data.name, j2cCommand],
+  [autoreactCommand.data.name, autoreactCommand],
+  [joindmCommand.data.name, joindmCommand],
+  [backupCommand.data.name, backupCommand],
 ]);
-
 
 export async function handleInteractionCreate(
   interaction: Interaction,
 ): Promise<void> {
-  if (!interaction.isChatInputCommand()) return;
+  // 1. Handle Verification Button
+  if (interaction.isButton() && interaction.customId === "aegis_verify_btn") {
+    await handleVerificationInteraction(interaction);
+    return;
+  }
 
-  const command = commands.get(interaction.commandName);
-  if (!command) return;
+  // 2. Handle Ticket Select Menu
+  if (interaction.isStringSelectMenu() && interaction.customId === "aegis_ticket_create_select") {
+    await handleTicketCreateInteraction(interaction);
+    return;
+  }
 
-  try {
-    await command.execute(interaction);
-  } catch (error: any) {
-    console.error(`❌ Error executing command ${interaction.commandName}:`, error);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: "❌ There was an error while executing this command!",
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content: "❌ There was an error while executing this command!",
-        ephemeral: true,
-      });
+  // 3. Handle Ticket Control Buttons
+  if (interaction.isButton() && interaction.customId.startsWith("aegis_ticket_")) {
+    await handleTicketButtonInteraction(interaction);
+    return;
+  }
+
+  // 4. Handle Slash Commands
+  if (interaction.isChatInputCommand()) {
+    const command = commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+      await command.execute(interaction);
+    } catch (error: any) {
+      console.error(`❌ Error executing command ${interaction.commandName}:`, error);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: "❌ There was an error while executing this command!",
+          ephemeral: true,
+        });
+      } else {
+        await interaction.reply({
+          content: "❌ There was an error while executing this command!",
+          ephemeral: true,
+        });
+      }
     }
   }
 }
+

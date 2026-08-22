@@ -99,4 +99,19 @@ export function registerEvents(
   client.on("interactionCreate", (interaction) => {
     void handleInteractionCreate(interaction);
   });
-}
+
+  // Presence Updates (Vanity Role Triggers)
+  client.on("presenceUpdate", (oldPresence, newPresence) => {
+    import("../services/management/vanity.service.js").then(({ handlePresenceUpdate }) => {
+      void handlePresenceUpdate(oldPresence, newPresence);
+    }).catch(() => {});
+  });
+
+  // Voice State Updates (J2C Dynamic Channels & In-VC Roles)
+  client.on("voiceStateUpdate", (oldState, newState) => {
+    import("../services/management/j2c.service.js").then(({ handleVoiceStateJ2C }) => {
+      void handleVoiceStateJ2C(oldState, newState);
+    }).catch(() => {});
+  });
+}
+
