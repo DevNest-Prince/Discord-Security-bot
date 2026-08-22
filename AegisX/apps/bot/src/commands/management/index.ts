@@ -1,5 +1,6 @@
 export * from "./autorole.js";
 export * from "./welcome.js";
+export * from "./goodbye.js";
 export * from "./verification.js";
 export * from "./vanityroles.js";
 export * from "./tickets.js";
@@ -7,6 +8,9 @@ export * from "./leveling.js";
 export * from "./logging.js";
 export * from "./customroles.js";
 export * from "./j2c.js";
+export * from "./voice.js";
 export * from "./autoreact.js";
 export * from "./joindm.js";
 export * from "./backup.js";
+export * from "./staff.js";
+export * from "./setup.js";

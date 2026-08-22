@@ -179,6 +179,46 @@ export interface CustomRoleConfig {
   requiredRoleId?: string | null;
 }
 
+export interface JailConfig {
+  enabled: boolean;
+  jailRoleId: string | null;
+  jailCategoryId: string | null;
+  jailChannelId: string | null;
+  logChannelId: string | null;
+  autoRoleRestore: boolean;
+  rejoinProtection: boolean;
+}
+
+export interface RaidConfig {
+  enabled: boolean;
+  joinThreshold: number; // e.g. 5 joins
+  windowSeconds: number; // e.g. in 10 seconds
+  minAccountAgeDays: number; // e.g. accounts newer than 3 days
+  action: "lockdown" | "kick" | "ban" | "jail" | "verification";
+  logChannelId: string | null;
+}
+
+export interface GoodbyeConfig {
+  enabled: boolean;
+  channelId: string | null;
+  message: string | null;
+  embedData: Record<string, unknown> | null;
+  autoDeleteDuration: number | null;
+}
+
+export interface WarnEscalationRule {
+  warnCount: number;
+  action: "timeout" | "mute" | "jail" | "kick" | "ban";
+  durationSeconds?: number;
+}
+
+export interface WarnConfig {
+  enabled: boolean;
+  maxPoints: number;
+  expirationDays: number;
+  escalationRules: WarnEscalationRule[];
+}
+
 export interface GuildConfig {
   guildId: string;
   prefix: string;
@@ -192,6 +232,10 @@ export interface GuildConfig {
   verification: VerificationConfig;
   vanityRoles: VanityRoleSetup[];
   welcome: WelcomeConfig;
+  goodbye: GoodbyeConfig;
+  jail: JailConfig;
+  raid: RaidConfig;
+  warns: WarnConfig;
   tickets: TicketConfig;
   leveling: LevelingConfig;
   j2c: J2CConfig;
@@ -202,6 +246,7 @@ export interface GuildConfig {
 }
 
 export type GuildConfigDocument = GuildConfig & Document;
+
 
 
 
@@ -475,6 +520,76 @@ const CustomRoleSchema = new Schema<CustomRoleConfig>(
   { _id: false },
 );
 
+const JailSchema = new Schema<JailConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    jailRoleId: { type: String, default: null },
+    jailCategoryId: { type: String, default: null },
+    jailChannelId: { type: String, default: null },
+    logChannelId: { type: String, default: null },
+    autoRoleRestore: { type: Boolean, default: true },
+    rejoinProtection: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
+const RaidSchema = new Schema<RaidConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    joinThreshold: { type: Number, default: 5 },
+    windowSeconds: { type: Number, default: 10 },
+    minAccountAgeDays: { type: Number, default: 3 },
+    action: {
+      type: String,
+      enum: ["lockdown", "kick", "ban", "jail", "verification"],
+      default: "verification",
+    },
+    logChannelId: { type: String, default: null },
+  },
+  { _id: false },
+);
+
+const GoodbyeSchema = new Schema<GoodbyeConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    channelId: { type: String, default: null },
+    message: { type: String, default: null },
+    embedData: { type: Schema.Types.Mixed, default: null },
+    autoDeleteDuration: { type: Number, default: null },
+  },
+  { _id: false },
+);
+
+const WarnEscalationRuleSchema = new Schema<WarnEscalationRule>(
+  {
+    warnCount: { type: Number, required: true },
+    action: {
+      type: String,
+      enum: ["timeout", "mute", "jail", "kick", "ban"],
+      required: true,
+    },
+    durationSeconds: { type: Number, default: 3600 },
+  },
+  { _id: false },
+);
+
+const WarnsSchema = new Schema<WarnConfig>(
+  {
+    enabled: { type: Boolean, default: true },
+    maxPoints: { type: Number, default: 5 },
+    expirationDays: { type: Number, default: 30 },
+    escalationRules: {
+      type: [WarnEscalationRuleSchema],
+      default: [
+        { warnCount: 2, action: "timeout", durationSeconds: 3600 },
+        { warnCount: 3, action: "jail", durationSeconds: 86400 },
+        { warnCount: 4, action: "ban" },
+      ],
+    },
+  },
+  { _id: false },
+);
+
 const GuildConfigSchema = new Schema<GuildConfig>(
   {
     guildId: {
@@ -527,6 +642,22 @@ const GuildConfigSchema = new Schema<GuildConfig>(
       type: WelcomeSchema,
       default: () => ({}),
     },
+    goodbye: {
+      type: GoodbyeSchema,
+      default: () => ({}),
+    },
+    jail: {
+      type: JailSchema,
+      default: () => ({}),
+    },
+    raid: {
+      type: RaidSchema,
+      default: () => ({}),
+    },
+    warns: {
+      type: WarnsSchema,
+      default: () => ({}),
+    },
     tickets: {
       type: TicketSchema,
       default: () => ({}),
@@ -556,6 +687,7 @@ const GuildConfigSchema = new Schema<GuildConfig>(
       default: [],
     },
   },
+
   {
     timestamps: true,
     versionKey: false,

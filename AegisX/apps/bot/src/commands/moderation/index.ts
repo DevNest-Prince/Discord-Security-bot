@@ -5,3 +5,7 @@ export { lockCommand, unlockCommand, hideCommand, unhideCommand } from "./lock.j
 export { nukeCommand } from "./nuke.js";
 export { purgeCommand } from "./purge.js";
 export { vckickCommand, vcmuteCommand, vcunmuteCommand } from "./vc.js";
+export { moderationCommand } from "./moderation.js";
+export { warnCommand } from "./warn.js";
+export { casesCommand } from "./cases.js";
+export { jailCommand } from "./jail.js";

@@ -3,6 +3,8 @@ import {
   helpCommand,
   antinukeCommand,
   whitelistCommand,
+  securityCommand,
+  raidCommand,
   extraownerCommand,
   automodCommand,
   emergencyCommand,
@@ -22,11 +24,16 @@ import {
   vckickCommand,
   vcmuteCommand,
   vcunmuteCommand,
+  moderationCommand,
+  warnCommand,
+  casesCommand,
+  jailCommand,
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
   autoroleCommand,
   welcomeCommand,
+  goodbyeCommand,
   verificationCommand,
   vanityrolesCommand,
   ticketsCommand,
@@ -34,11 +41,13 @@ import {
   loggingCommand,
   customrolesCommand,
   j2cCommand,
+  voiceCommand,
   autoreactCommand,
   joindmCommand,
   backupCommand,
+  staffCommand,
+  setupCommand,
 } from "./index.js";
-
 
 export async function registerSlashCommands(
   token: string,
@@ -48,13 +57,20 @@ export async function registerSlashCommands(
   const rest = new REST({ version: "10" }).setToken(token);
   const commandData = [
     helpCommand.data.toJSON(),
+    setupCommand.data.toJSON(),
+    securityCommand.data.toJSON(),
     antinukeCommand.data.toJSON(),
+    raidCommand.data.toJSON(),
     whitelistCommand.data.toJSON(),
     extraownerCommand.data.toJSON(),
     automodCommand.data.toJSON(),
     emergencyCommand.data.toJSON(),
     antibetrayCommand.data.toJSON(),
     limitCommand.data.toJSON(),
+    moderationCommand.data.toJSON(),
+    warnCommand.data.toJSON(),
+    casesCommand.data.toJSON(),
+    jailCommand.data.toJSON(),
     banCommand.data.toJSON(),
     unbanCommand.data.toJSON(),
     kickCommand.data.toJSON(),
@@ -72,8 +88,10 @@ export async function registerSlashCommands(
     pingCommand.data.toJSON(),
     serverinfoCommand.data.toJSON(),
     botinfoCommand.data.toJSON(),
+    staffCommand.data.toJSON(),
     autoroleCommand.data.toJSON(),
     welcomeCommand.data.toJSON(),
+    goodbyeCommand.data.toJSON(),
     verificationCommand.data.toJSON(),
     vanityrolesCommand.data.toJSON(),
     ticketsCommand.data.toJSON(),
@@ -81,12 +99,11 @@ export async function registerSlashCommands(
     loggingCommand.data.toJSON(),
     customrolesCommand.data.toJSON(),
     j2cCommand.data.toJSON(),
+    voiceCommand.data.toJSON(),
     autoreactCommand.data.toJSON(),
     joindmCommand.data.toJSON(),
     backupCommand.data.toJSON(),
   ];
-
-
 
   try {
     console.log(`⏳ Registering ${commandData.length} application (/) commands...`);

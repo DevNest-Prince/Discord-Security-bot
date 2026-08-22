@@ -1,4 +1,4 @@
-import type { Client } from "discord.js";
+import type { Client, EmbedBuilder } from "discord.js";
 
 import { registerClientReadyEvent } from "./client-ready.js";
 import { registerGuildCreateEvent } from "./guild-create.js";
@@ -19,6 +19,8 @@ import { handleInteractionCreate } from "./interaction-create.js";
 import {
   webhookAuditResolver,
 } from "../security/webhook/webhook-audit-resolver.js";
+import { dispatchLog } from "../services/logging/audit-logger.service.js";
+import { AegisColors } from "../utils/ui/colors.js";
 
 export function registerEvents(
   client: Client,
@@ -62,7 +64,9 @@ export function registerEvents(
   });
 
   client.on("channelUpdate", (oldChannel, newChannel) => {
-    void handleChannelUpdate(oldChannel, newChannel);
+    if (!oldChannel.isDMBased() && !newChannel.isDMBased()) {
+      void handleChannelUpdate(oldChannel, newChannel);
+    }
   });
 
   // Roles
@@ -107,11 +111,28 @@ export function registerEvents(
     }).catch(() => {});
   });
 
-  // Voice State Updates (J2C Dynamic Channels & In-VC Roles)
+  // Voice State Updates (J2C Temp VCs, In-VC Roles, Voice Tracking & Logs)
   client.on("voiceStateUpdate", (oldState, newState) => {
+    const member = newState.member || oldState.member;
+    const guild = newState.guild;
+    if (!member) return;
+
+    // 1. Dynamic J2C Voice Engine
+    import("../services/management/voice.service.js").then(({ voiceService }) => {
+      void voiceService.handleVoiceState(oldState, newState);
+    }).catch(() => {});
+
     import("../services/management/j2c.service.js").then(({ handleVoiceStateJ2C }) => {
       void handleVoiceStateJ2C(oldState, newState);
     }).catch(() => {});
+
+    // 2. Voice Activity Tracking
+    import("../services/management/activity.service.js").then(({ activityService }) => {
+      if (!oldState.channelId && newState.channelId) {
+        void activityService.handleVoiceJoin(guild.id, member.id);
+      } else if (oldState.channelId && !newState.channelId) {
+        void activityService.handleVoiceLeave(guild.id, member.id);
+      }
+    }).catch(() => {});
   });
 }
-

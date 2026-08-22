@@ -32,6 +32,11 @@ export {
   type VerificationConfig,
   type VanityRoleSetup,
   type WelcomeConfig,
+  type GoodbyeConfig,
+  type JailConfig,
+  type RaidConfig,
+  type WarnConfig,
+  type WarnEscalationRule,
   type TicketConfig,
   type TicketCategory,
   type LevelingConfig,
@@ -41,6 +46,54 @@ export {
   type JoinDmConfig,
   type CustomRoleConfig,
 } from "./models/GuildConfig.js";
+
+export {
+  StaffPermissionProfileModel,
+  type StaffPermissionProfile,
+  type StaffPermissionProfileDocument,
+} from "./models/StaffPermissionProfile.js";
+
+export {
+  ModerationCaseModel,
+  type ModerationCase,
+  type ModerationCaseDocument,
+} from "./models/ModerationCase.js";
+
+export {
+  WarnRecordModel,
+  type WarnRecord,
+  type WarnRecordDocument,
+} from "./models/WarnRecord.js";
+
+export {
+  JailSessionModel,
+  type JailSession,
+  type JailSessionDocument,
+} from "./models/JailSession.js";
+
+export {
+  AdvancedWhitelistModel,
+  type AdvancedWhitelist,
+  type AdvancedWhitelistDocument,
+} from "./models/AdvancedWhitelist.js";
+
+export {
+  ActivityLeaderboardModel,
+  type ActivityLeaderboard,
+  type ActivityLeaderboardDocument,
+} from "./models/ActivityLeaderboard.js";
+
+export {
+  VoiceSessionModel,
+  type VoiceSession,
+  type VoiceSessionDocument,
+} from "./models/VoiceSession.js";
+
+export {
+  AuditConfigHistoryModel,
+  type AuditConfigHistory,
+  type AuditConfigHistoryDocument,
+} from "./models/AuditConfigHistory.js";
 
 export {
   UserLevelModel,
@@ -66,7 +119,9 @@ export {
 export {
   findGuildConfig,
   createGuildConfig,
+  updateGuildConfig,
   updateGuildPrefix,
+
   updateAntiNukeConfig,
   setWhitelistedUser,
   removeWhitelistedUser,
@@ -95,6 +150,60 @@ export {
 } from "./repositories/guild-config.repository.js";
 
 export {
+  getStaffProfiles,
+  getStaffProfileByRole,
+  upsertStaffProfile,
+  deleteStaffProfile,
+  getHighestStaffPriorityForUser,
+} from "./repositories/staff.repository.js";
+
+export {
+  getNextCaseId,
+  createModerationCase,
+  getModerationCase,
+  getUserModerationHistory,
+  updateCaseReason,
+  getGuildCaseCount,
+} from "./repositories/moderation-case.repository.js";
+
+export {
+  addWarning,
+  getActiveWarnings,
+  getActiveWarningPoints,
+  clearUserWarnings,
+  removeWarningByCaseId,
+} from "./repositories/warn.repository.js";
+
+export {
+  createJailSession,
+  getActiveJailSession,
+  getExpiredJailSessions,
+  closeJailSession,
+  listActiveJails,
+  getUserJailHistory,
+} from "./repositories/jail.repository.js";
+
+export {
+  addAdvancedWhitelist,
+  removeAdvancedWhitelist,
+  isTargetWhitelisted,
+  listGuildWhitelists,
+} from "./repositories/advanced-whitelist.repository.js";
+
+export {
+  recordMessageActivity,
+  recordVoiceActivity,
+  getLeaderboard,
+  getUserActivity,
+  resetLeaderboardInterval,
+} from "./repositories/activity.repository.js";
+
+export {
+  logConfigChange,
+  getGuildConfigAuditHistory,
+} from "./repositories/audit-config.repository.js";
+
+export {
   getUserLevel,
   addMessageXp,
   getGuildLeaderboard,
@@ -119,5 +228,3 @@ export {
 export {
   getGuildConfig as getSecurityGuildConfig,
 } from "./services/guild-config.service.js";
-
-

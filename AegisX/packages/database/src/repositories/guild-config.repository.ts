@@ -25,6 +25,22 @@ export async function findGuildConfig(
     .exec();
 }
 
+export async function updateGuildConfig(
+  guildId: string,
+  data: Partial<GuildConfig>,
+): Promise<GuildConfig> {
+  const updated = await GuildConfigModel.findOneAndUpdate(
+    { guildId },
+    { $set: data },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  )
+    .lean<GuildConfig>()
+    .exec();
+
+  return updated!;
+}
+
+
 export async function createGuildConfig(
   guildId: string,
 ): Promise<GuildConfig> {

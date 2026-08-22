@@ -36,6 +36,16 @@ import {
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
+  securityCommand,
+  raidCommand,
+  warnCommand,
+  casesCommand,
+  jailCommand,
+  staffCommand,
+  goodbyeCommand,
+  voiceCommand,
+
+  setupCommand,
   autoroleCommand,
   welcomeCommand,
   verificationCommand,
@@ -49,6 +59,7 @@ import {
   joindmCommand,
   backupCommand,
 } from "../commands/index.js";
+
 
 
 export async function handleMessageCreate(message: Message): Promise<void> {
@@ -307,6 +318,37 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       case "backup":
         await backupCommand.executePrefix(message, args);
         break;
+      case "setup":
+        await setupCommand.executePrefix(message);
+        break;
+      case "security":
+        await securityCommand.executePrefix(message, args);
+        break;
+      case "raid":
+        await raidCommand.executePrefix(message, args);
+        break;
+      case "warn":
+      case "warns":
+      case "warnings":
+        await warnCommand.executePrefix(message, args);
+        break;
+      case "case":
+      case "history":
+        await casesCommand.executePrefix(message, args);
+        break;
+      case "jail":
+      case "unjail":
+        await jailCommand.executePrefix(message, args);
+        break;
+      case "staff":
+        await staffCommand.executePrefix(message, args);
+        break;
+      case "goodbye":
+        await goodbyeCommand.executePrefix(message, args);
+        break;
+      case "voice":
+        await voiceCommand.executePrefix(message, args);
+        break;
       default:
         break;
     }
@@ -314,10 +356,13 @@ export async function handleMessageCreate(message: Message): Promise<void> {
     console.error("❌ Prefix command execution error:", cmdErr);
   }
 
-  // 6. Handle Leveling XP & AutoReact
+  // 6. Handle Leveling XP, Activity Tracking & AutoReact
   try {
     const { handleMessageXp } = await import("../services/management/leveling.service.js");
     await handleMessageXp(message);
+
+    const { activityService } = await import("../services/management/activity.service.js");
+    await activityService.handleMessage(message);
 
     const guildCfg = await getGuildConfig(message.guild.id);
     const reactRules = guildCfg.autoReact || [];
@@ -328,6 +373,7 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       }
     }
   } catch {}
+
 }
 
 

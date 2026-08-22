@@ -125,6 +125,17 @@ export class EmergencyService {
       return { success: false, count: 0, error: err?.message };
     }
   }
+
+  async enableEmergency(guild: Guild, reason = "Server Emergency Lockdown"): Promise<number> {
+    const res = await this.lockdown(guild, reason);
+    return res.count;
+  }
+
+  async disableEmergency(guild: Guild, reason = "Lifting Emergency Lockdown"): Promise<number> {
+    const res = await this.unlockdown(guild, reason);
+    return res.count;
+  }
 }
 
 export const emergencyService = new EmergencyService();
+

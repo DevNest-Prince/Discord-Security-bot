@@ -9,14 +9,30 @@ import {
   handleJoinDm,
 } from "../services/management/welcome.service.js";
 import { handleAutoRole as applyAutoRole } from "../services/management/autorole.service.js";
-
-import { dispatchLog } from "../services/management/logging.service.js";
+import { raidService } from "../services/security/raid.service.js";
+import { jailService } from "../services/jail/jail.service.js";
+import { dispatchLog } from "../services/logging/audit-logger.service.js";
 import { AegisColors } from "../utils/ui/colors.js";
 
 export async function handleGuildMemberAdd(
   member: GuildMember,
 ): Promise<void> {
-  // 1. Welcome Greeting & Join DM
+  // 1. Raid Burst & Suspicious Account Age Detection
+  try {
+    const raidRes = await raidService.handleMemberJoin(member);
+    if (raidRes.isRaid) return; // Halt normal welcome if server is quarantined by raid
+  } catch (err) {
+    console.error(`[MemberAdd] Raid detection error in ${member.guild.id}:`, err);
+  }
+
+  // 2. Jail Quarantine Rejoin Guardian
+  try {
+    await jailService.handleRejoinJail(member);
+  } catch (err) {
+    console.error(`[MemberAdd] Jail rejoin guardian error in ${member.guild.id}:`, err);
+  }
+
+  // 3. Welcome Greeting & Join DM
   try {
     await handleWelcome(member);
     await handleJoinDm(member);
@@ -24,25 +40,30 @@ export async function handleGuildMemberAdd(
     console.error(`[MemberAdd] Welcome error in ${member.guild.id}:`, err);
   }
 
-  // 2. AutoRole Assignment
+  // 4. AutoRole Assignment
   try {
     await applyAutoRole(member);
   } catch (err) {
     console.error(`[MemberAdd] AutoRole error in ${member.guild.id}:`, err);
   }
 
-  // 3. Member Join Audit Log
+  // 5. Member Join Audit Log
   try {
     const logEmbed = new EmbedBuilder()
       .setColor(AegisColors.Success)
       .setTitle("📥 Member Joined")
-      .setDescription(`**User:** <@${member.id}> (${member.user.tag})\n**ID:** \`${member.id}\`\n**Account Created:** <t:${Math.floor(member.user.createdAt.getTime() / 1000)}:R>\n**Total Members:** \`${member.guild.memberCount}\``)
+      .setDescription(
+        `**User:** <@${member.id}> (${member.user.tag})\n` +
+        `**ID:** \`${member.id}\`\n` +
+        `**Account Created:** <t:${Math.floor(member.user.createdAt.getTime() / 1000)}:R>\n` +
+        `**Total Members:** \`${member.guild.memberCount}\``,
+      )
       .setThumbnail(member.user.displayAvatarURL())
       .setTimestamp();
     await dispatchLog(member.guild, "members", logEmbed);
   } catch {}
 
-  // 4. Anti-Bot Add Protection (If member is a bot)
+  // 6. Anti-Bot Add Protection (If member is a bot)
   if (!member.user.bot) return;
 
   try {
@@ -67,4 +88,3 @@ export async function handleGuildMemberAdd(
     );
   }
 }
-
