@@ -1,15 +1,14 @@
 import {
   PermissionFlagsBits,
-} from "discord.js";
-import type {
-  Guild,
-  GuildMember,
+  type Guild,
+  type GuildMember,
 } from "discord.js";
 
 export type EnforcementAction =
   | "ban"
   | "kick"
-  | "strip_roles";
+  | "strip_roles"
+  | "timeout";
 
 export interface EnforcementRequest {
   guild: Guild;
@@ -17,6 +16,7 @@ export interface EnforcementRequest {
   action: EnforcementAction;
   reason: string;
   dryRun?: boolean;
+  timeoutMinutes?: number;
 }
 
 export interface EnforcementResult {
@@ -35,118 +35,112 @@ export class EnforcementService {
       executorId,
       action,
       reason,
-      dryRun = true,
+      dryRun = process.env.SECURITY_DRY_RUN === "true",
+      timeoutMinutes = 60,
     } = request;
 
-    const member =
-      await guild.members.fetch(executorId).catch(() => null);
-
-    if (!member) {
-      return this.fail(
-        action,
-        "Executor could not be resolved.",
-      );
+    const me = guild.members.me;
+    if (!me) {
+      return this.fail(action, "Bot member could not be resolved in guild.");
     }
 
-const me = guild.members.me;
-
-if (!me) {
-  return this.fail(
-    action,
-    "Bot member could not be resolved.",
-  );
-}
-
-const requiredPermission =
-  action === "ban"
-    ? PermissionFlagsBits.BanMembers
-    : action === "kick"
-      ? PermissionFlagsBits.KickMembers
-      : PermissionFlagsBits.ManageRoles;
-
-if (!me.permissions.has(requiredPermission)) {
-  return this.fail(
-    action,
-    `Bot is missing required permission for ${action}.`,
-  );
-}
-
-    if (member.id === guild.ownerId) {
-      return this.fail(
-        action,
-        "Cannot enforce against the server owner.",
-      );
+    if (executorId === guild.ownerId) {
+      return this.fail(action, "Cannot enforce against the server owner.");
     }
 
-    if (member.id === me.id) {
-      return this.fail(
-        action,
-        "Cannot enforce against the bot itself.",
-      );
+    if (executorId === me.id) {
+      return this.fail(action, "Cannot enforce against the bot itself.");
     }
 
-    if (
-      member.roles.highest.comparePositionTo(
-        me.roles.highest,
-      ) >= 0
-    ) {
+    const member = await guild.members.fetch(executorId).catch(() => null);
+
+    if (member && member.roles.highest.comparePositionTo(me.roles.highest) >= 0) {
       return this.fail(
         action,
-        "Executor role is equal to or higher than the bot.",
+        "Executor role position is equal to or higher than the bot.",
       );
     }
 
     if (dryRun) {
       console.warn(
-        `DRY RUN: ${action} ${member.user.tag} (${member.id})`,
-        {
-          guildId: guild.id,
+        `🛡️ [DRY RUN] Would execute ${action} on ${member?.user.tag ?? executorId} in ${guild.name} (${guild.id}) - Reason: ${reason}`,
+      );
+      return {
+        success: true,
+        executed: false,
+        action,
+        reason,
+      };
+    }
+
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        switch (action) {
+          case "ban": {
+            if (!me.permissions.has(PermissionFlagsBits.BanMembers)) {
+              return this.fail(action, "Bot missing BanMembers permission.");
+            }
+            await guild.bans.create(executorId, { reason });
+            break;
+          }
+
+          case "kick": {
+            if (!me.permissions.has(PermissionFlagsBits.KickMembers)) {
+              return this.fail(action, "Bot missing KickMembers permission.");
+            }
+            if (member) {
+              await member.kick(reason);
+            }
+            break;
+          }
+
+          case "strip_roles": {
+            if (!me.permissions.has(PermissionFlagsBits.ManageRoles)) {
+              return this.fail(action, "Bot missing ManageRoles permission.");
+            }
+            if (member) {
+              await this.stripRoles(member, reason);
+            }
+            break;
+          }
+
+          case "timeout": {
+            if (!me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+              return this.fail(action, "Bot missing ModerateMembers permission.");
+            }
+            if (member) {
+              await member.timeout(timeoutMinutes * 60 * 1000, reason);
+            }
+            break;
+          }
+        }
+
+        console.log(
+          `⚡ Successfully enforced ${action} on ${member?.user.tag ?? executorId} in ${guild.name} (${guild.id})`,
+        );
+
+        return {
+          success: true,
+          executed: true,
+          action,
           reason,
-        },
-      );
-
-      return {
-        success: true,
-        executed: false,
-        action,
-        reason,
-      };
-    }
-
-    try {
-      switch (action) {
-        case "ban":
-          await member.ban({ reason });
-          break;
-
-        case "kick":
-          await member.kick(reason);
-          break;
-
-        case "strip_roles":
-          await this.stripRoles(member, reason);
-          break;
+        };
+      } catch (error: any) {
+        console.error(`⚠️ Enforcement attempt failed (retries left: ${retries - 1}):`, error?.message ?? error);
+        retries--;
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
       }
-
-      return {
-        success: true,
-        executed: true,
-        action,
-        reason,
-      };
-    } catch (error) {
-      console.error(
-        `Enforcement failed for ${member.id}:`,
-        error,
-      );
-
-      return {
-        success: false,
-        executed: false,
-        action,
-        reason,
-      };
     }
+
+    return {
+      success: false,
+      executed: false,
+      action,
+      reason: "Enforcement failed after maximum retries.",
+    };
   }
 
   private async stripRoles(
@@ -154,28 +148,21 @@ if (!me.permissions.has(requiredPermission)) {
     reason: string,
   ): Promise<void> {
     const removableRoles = member.roles.cache.filter(
-      (role) =>
-        role.editable &&
-        !role.managed,
+      (role) => role.editable && !role.managed && role.id !== member.guild.id,
     );
 
     if (removableRoles.size === 0) {
       return;
     }
 
-    await member.roles.remove(
-      removableRoles,
-      reason,
-    );
+    await member.roles.remove(removableRoles, reason);
   }
 
   private fail(
     action: EnforcementAction,
     reason: string,
   ): EnforcementResult {
-    console.warn(
-      `Enforcement blocked: ${reason}`,
-    );
+    console.warn(`🛡️ Enforcement blocked: ${reason}`);
 
     return {
       success: false,
@@ -186,5 +173,5 @@ if (!me.permissions.has(requiredPermission)) {
   }
 }
 
-export const enforcementService =
-  new EnforcementService();
+export const enforcementService = new EnforcementService();
+

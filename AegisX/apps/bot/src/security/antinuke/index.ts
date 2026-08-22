@@ -10,9 +10,16 @@ export {
   antiNukeTracker,
 } from "./anti-nuke-tracker.js";
 
+export {
+  RecoveryService,
+  recoveryService,
+  type ChannelSnapshot,
+  type RoleSnapshot,
+} from "./recovery.service.js";
+
 export type {
   AntiNukeAction,
   AntiNukeConfig,
   AntiNukeEvent,
   AntiNukeThresholdResult,
-} from "./anti-nuke.types.js";
+} from "./anti-nuke.types.js";

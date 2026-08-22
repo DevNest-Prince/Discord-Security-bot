@@ -4,8 +4,10 @@ import { auditLogService } from "../audit/audit-log.service.js";
 import {
   securityExemptionService,
   type SecurityExemptionOptions,
+  type SecurityActionType,
 } from "../exemptions/security-exemption.service.js";
 import { executorResolverService } from "../executor/executor-resolver.service.js";
+import { getGuildConfig } from "../../services/guild-config.service.js";
 
 import type { AuditLogEvent } from "discord.js";
 
@@ -14,6 +16,7 @@ export interface SecurityDecisionOptions
   eventName: string;
   action: AuditLogEvent;
   targetId?: string;
+  actionType?: SecurityActionType;
 }
 
 export interface SecurityDecision {
@@ -33,7 +36,7 @@ export class SecurityDecisionService {
     options: SecurityDecisionOptions,
   ): Promise<SecurityDecision> {
     const audit =
-  await auditLogService.findSecurityEntry(
+      await auditLogService.findSecurityEntry(
         guild,
         {
           eventName: options.eventName,
@@ -74,11 +77,21 @@ export class SecurityDecisionService {
       };
     }
 
+    // Load guild security config to get extra owners & granular whitelist
+    const config = await getGuildConfig(guild.id);
+    const extraOwners = config.security?.extraOwners ?? [];
+    const whitelistedUsers = config.security?.whitelistedUsers ?? {};
+
     const exemption =
       securityExemptionService.check(
         guild,
         executor.user,
-        options,
+        {
+          ...options,
+          extraOwnerIds: options.extraOwnerIds ?? extraOwners,
+          whitelistedUsers: options.whitelistedUsers ?? whitelistedUsers,
+          actionType: options.actionType ?? "general",
+        },
       );
 
     if (exemption.exempt) {
@@ -98,4 +111,4 @@ export class SecurityDecisionService {
 }
 
 export const securityDecisionService =
-  new SecurityDecisionService();
+  new SecurityDecisionService();

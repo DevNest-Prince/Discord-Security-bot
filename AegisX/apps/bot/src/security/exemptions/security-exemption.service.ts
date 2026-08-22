@@ -1,18 +1,23 @@
 import type { Guild, User } from "discord.js";
+import type { WhitelistPermissions } from "@aegisx/database";
+
+export type SecurityActionType = keyof WhitelistPermissions | "general";
 
 export interface SecurityExemptionOptions {
-  ownerIds?: readonly string[];
-  whitelistIds?: readonly string[];
-  botIds?: readonly string[];
+  actionType?: SecurityActionType;
+  extraOwnerIds?: readonly string[];
+  whitelistedUsers?: Record<string, WhitelistPermissions>;
+  botOwnerIds?: readonly string[];
 }
 
 export interface SecurityExemptionResult {
   exempt: boolean;
   reason:
     | "server-owner"
-    | "configured-owner"
+    | "extra-owner"
+    | "bot-owner"
+    | "self-bot"
     | "whitelisted"
-    | "bot"
     | null;
 }
 
@@ -24,13 +29,15 @@ export class SecurityExemptionService {
   ): SecurityExemptionResult {
     const executorId = executor.id;
 
-    if (executor.bot) {
+    // 1. Bot's own client actions are always exempt
+    if (guild.client.user && executorId === guild.client.user.id) {
       return {
         exempt: true,
-        reason: "bot",
+        reason: "self-bot",
       };
     }
 
+    // 2. Server Owner is always exempt
     if (guild.ownerId === executorId) {
       return {
         exempt: true,
@@ -38,25 +45,44 @@ export class SecurityExemptionService {
       };
     }
 
-    if (options.ownerIds?.includes(executorId)) {
+    // 3. Extra Owners configured on the server
+    if (options.extraOwnerIds?.includes(executorId)) {
       return {
         exempt: true,
-        reason: "configured-owner",
+        reason: "extra-owner",
       };
     }
 
-    if (options.whitelistIds?.includes(executorId)) {
+    // 4. Global Bot Developers / Owners configured in ENV
+    const envBotOwners = (process.env.OWNER_IDS ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    if (envBotOwners.includes(executorId) || options.botOwnerIds?.includes(executorId)) {
       return {
         exempt: true,
-        reason: "whitelisted",
+        reason: "bot-owner",
       };
     }
 
-    if (options.botIds?.includes(executorId)) {
-      return {
-        exempt: true,
-        reason: "bot",
-      };
+    // 5. Granular Whitelist per action
+    const userPermissions = options.whitelistedUsers?.[executorId];
+    if (userPermissions) {
+      const actionType = options.actionType;
+      if (!actionType || actionType === "general") {
+        return {
+          exempt: true,
+          reason: "whitelisted",
+        };
+      }
+
+      if (userPermissions[actionType] === true) {
+        return {
+          exempt: true,
+          reason: "whitelisted",
+        };
+      }
     }
 
     return {
@@ -75,4 +101,4 @@ export class SecurityExemptionService {
 }
 
 export const securityExemptionService =
-  new SecurityExemptionService();
+  new SecurityExemptionService();

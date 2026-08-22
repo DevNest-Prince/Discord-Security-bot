@@ -15,13 +15,45 @@ export {
 
 export {
   GuildConfigModel,
+  type GuildConfig,
+  type GuildConfigDocument,
+  type WhitelistPermissions,
+  type AntiNukeConfig,
+  type SecurityConfig,
+  type AutomodConfig,
+  type LoggingConfig,
+  type AutoRoleConfig,
+  type VerificationConfig,
+  type VanityRoleSetup,
+  type WelcomeConfig,
+  type TicketConfig,
+  type TicketCategory,
+  type LevelingConfig,
 } from "./models/GuildConfig.js";
 
 export {
   findGuildConfig,
   createGuildConfig,
+  updateGuildPrefix,
+  updateAntiNukeConfig,
+  setWhitelistedUser,
+  removeWhitelistedUser,
+  resetWhitelistedUsers,
+  setExtraOwner,
+  removeExtraOwner,
+  resetExtraOwners,
+  updateAutomodConfig,
+  updateLoggingConfig,
+  updateAutoRoleConfig,
+  updateVerificationConfig,
+  setVanityRole,
+  removeVanityRole,
+  updateWelcomeConfig,
+  deleteWelcomeConfig,
+  updateTicketConfig,
+  updateLevelingConfig,
 } from "./repositories/guild-config.repository.js";
 
 export {
   getGuildConfig as getSecurityGuildConfig,
-} from "./services/guild-config.service.js";
+} from "./services/guild-config.service.js";

@@ -9,7 +9,6 @@
   ],
   "scripts": {
     "dev:bot": "npm --workspace apps/bot run dev",
-    "dev:api": "npm --workspace apps/api run dev",
-    "build": "npm run build --workspaces"
+    "build": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run build"
   }
 }

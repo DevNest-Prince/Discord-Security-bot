@@ -1,3 +1,5 @@
+import type { SecurityActionType } from "../exemptions/security-exemption.service.js";
+
 export type AntiNukeAction =
   | "ban"
   | "kick"
@@ -7,7 +9,9 @@ export type AntiNukeAction =
   | "role-delete"
   | "role-create"
   | "webhook-create"
-  | "webhook-delete";
+  | "webhook-delete"
+  | SecurityActionType
+  | string;
 
 export interface AntiNukeConfig {
   enabled: boolean;
@@ -15,6 +19,7 @@ export interface AntiNukeConfig {
   threshold: number;
   windowSeconds: number;
 }
+
 
 export interface AntiNukeEvent {
   guildId: string;
