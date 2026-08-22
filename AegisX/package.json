@@ -2,14 +2,21 @@
   "name": "aegisx",
   "version": "1.0.0",
   "private": true,
-  "description": "Production-ready Discord security and utility bot",
+  "description": "Production-ready Discord security, utility bot & web dashboard monorepo",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
     "dev:bot": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run dev",
-    "start": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run start",
-    "build": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run build"
+    "dev:dashboard": "npm --workspace apps/dashboard run dev",
+    "build:bot": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run build",
+    "build:dashboard": "npm --workspace apps/dashboard run build",
+    "build": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run build",
+    "build:all": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run build && npm --workspace apps/dashboard run build",
+    "start:bot": "npm --workspace apps/bot run start",
+    "start:dashboard": "npm --workspace apps/dashboard run start",
+    "start": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run start"
   }
-}
+}
+

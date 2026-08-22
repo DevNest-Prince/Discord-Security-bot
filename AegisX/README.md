@@ -79,7 +79,7 @@ cp .env.example .env
 Open `.env` in your editor and fill in your credentials:
 ```ini
 # -------------------------------------------------------------
-# AegisX Security Bot & Dashboard API Configuration
+# AegisX Security Bot & Backend API Configuration
 # -------------------------------------------------------------
 
 # Discord Bot Credentials (from https://discord.com/developers/applications)
@@ -96,7 +96,7 @@ REDIS_URL=redis://127.0.0.1:6379
 
 # Dashboard REST API Server
 API_PORT=8000
-DASHBOARD_API_KEY=your_secure_api_key_here     # Matches NEXT_PUBLIC_DASHBOARD_API_KEY in Dashboard
+DASHBOARD_API_KEY=your_secure_api_key_here     # Shared Bearer token with Dashboard
 
 # Bot Super Admins / Developer IDs (Comma-separated)
 OWNER_IDS=your_discord_user_id
@@ -105,6 +105,23 @@ OWNER_IDS=your_discord_user_id
 # 'false' = Live enforcement (instant real bans/kicks)
 # 'true'  = Dry-run mode (logs actions without kicking/banning)
 SECURITY_DRY_RUN=false
+
+# -------------------------------------------------------------
+# AegisX Web Dashboard Configuration (apps/dashboard)
+# -------------------------------------------------------------
+
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_DASHBOARD_API_KEY=your_secure_api_key_here
+
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_key_here
+
+DISCORD_CLIENT_ID=your_discord_bot_client_id
+DISCORD_CLIENT_SECRET=your_discord_oauth2_client_secret
+
+NEXT_PUBLIC_ADMIN_IDS=your_discord_user_id
+NEXT_PUBLIC_BRAND_NAME="AegisX"
+NEXT_PUBLIC_BRAND_NAME_WORD="AX"
 ```
 
 ---
@@ -128,21 +145,27 @@ To ensure all security and AutoMod features work properly, configure your bot ap
 
 ## 🏗️ Build & Run
 
-### 1. Build the Entire Monorepo
-Compile TypeScript across `@aegisx/database`, `@aegisx/redis`, and `apps/bot`:
+### 1. Build TypeScript Packages & Bot
 ```bash
 npm run build
 ```
 
-### 2. Start in Development Mode (Live Reload)
+### 2. Start Bot in Development Mode (Live Reload)
 ```bash
 npm run dev:bot
 ```
 
-### 3. Start in Production Mode
+### 3. Start Next.js Web Dashboard (Development Mode)
 ```bash
-npm --workspace apps/bot run start
+npm run dev:dashboard
 ```
+*Access the Web Dashboard in your browser at `http://localhost:3000`.*
+
+### 4. Build Entire Monorepo (Bot + Dashboard)
+```bash
+npm run build:all
+```
+
 
 ---
 
