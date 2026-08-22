@@ -8,7 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:bot": "npm --workspace apps/bot run dev",
+    "dev:bot": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run dev",
+    "start": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run start",
     "build": "npm --workspace packages/database run build && npm --workspace packages/redis run build && npm --workspace apps/bot run build"
   }
-}
+}

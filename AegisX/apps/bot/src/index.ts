@@ -69,12 +69,13 @@ async function startBot(): Promise<void> {
   }
   await client.login(botToken);
 
-  // 6. Register Slash Commands
-  const resolvedClientId = process.env.CLIENT_ID || client.user?.id;
+  // 6. Register Slash Commands (Uses logged-in bot user ID automatically)
+  const resolvedClientId = client.user?.id || process.env.CLIENT_ID;
   if (resolvedClientId && typeof resolvedClientId === "string") {
     const testGuildId = process.env.TEST_GUILD_ID;
     void registerSlashCommands(botToken, resolvedClientId, testGuildId);
   }
+
 }
 
 
