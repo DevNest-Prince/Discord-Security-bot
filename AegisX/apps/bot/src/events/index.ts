@@ -111,13 +111,20 @@ export function registerEvents(
     }).catch(() => {});
   });
 
-  // Voice State Updates (J2C Temp VCs, In-VC Roles, Voice Tracking & Logs)
+  // Voice State Updates (J2C Temp VCs, VC Bans, In-VC Roles, Voice Tracking & Logs)
   client.on("voiceStateUpdate", (oldState, newState) => {
     const member = newState.member || oldState.member;
     const guild = newState.guild;
     if (!member) return;
 
-    // 1. Dynamic J2C Voice Engine
+    // 1. Enforce Voice Ban / Boycott
+    if (newState.channelId) {
+      import("../services/voice/vcban.service.js").then(({ vcBanService }) => {
+        void vcBanService.handleVoiceConnect(member);
+      }).catch(() => {});
+    }
+
+    // 2. Dynamic J2C Voice Engine
     import("../services/management/voice.service.js").then(({ voiceService }) => {
       void voiceService.handleVoiceState(oldState, newState);
     }).catch(() => {});
@@ -126,7 +133,7 @@ export function registerEvents(
       void handleVoiceStateJ2C(oldState, newState);
     }).catch(() => {});
 
-    // 2. Voice Activity Tracking
+    // 3. Voice Activity Tracking
     import("../services/management/activity.service.js").then(({ activityService }) => {
       if (!oldState.channelId && newState.channelId) {
         void activityService.handleVoiceJoin(guild.id, member.id);
@@ -135,4 +142,5 @@ export function registerEvents(
       }
     }).catch(() => {});
   });
+
 }

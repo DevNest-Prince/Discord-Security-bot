@@ -1,10 +1,12 @@
 import type { Interaction, GuildMember, VoiceChannel } from "discord.js";
 import {
   helpCommand,
-  antinukeCommand,
-  whitelistCommand,
+  setupCommand,
   securityCommand,
+  antinukeCommand,
   raidCommand,
+  autoEmergencyCommand,
+  whitelistCommand,
   extraownerCommand,
   automodCommand,
   emergencyCommand,
@@ -31,6 +33,8 @@ import {
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
+  infoCommand,
+  staffCommand,
   autoroleCommand,
   welcomeCommand,
   goodbyeCommand,
@@ -42,11 +46,14 @@ import {
   customrolesCommand,
   j2cCommand,
   voiceCommand,
+  vcBanCommand,
+  giveawayCommand,
   autoreactCommand,
+  autoResponderCommand,
+  funCommand,
+  ignoreCommand,
   joindmCommand,
   backupCommand,
-  staffCommand,
-  setupCommand,
 } from "../commands/index.js";
 import { handleVerificationInteraction } from "../services/management/verification.service.js";
 import {
@@ -54,6 +61,7 @@ import {
   handleTicketButtonInteraction,
 } from "../services/management/tickets.service.js";
 import { tempVoiceMap } from "../services/management/voice.service.js";
+import { addParticipant, getGiveawayByMessageId } from "@aegisx/database";
 
 const commands = new Map<string, any>([
   [helpCommand.data.name, helpCommand],
@@ -61,6 +69,7 @@ const commands = new Map<string, any>([
   [securityCommand.data.name, securityCommand],
   [antinukeCommand.data.name, antinukeCommand],
   [raidCommand.data.name, raidCommand],
+  [autoEmergencyCommand.data.name, autoEmergencyCommand],
   [whitelistCommand.data.name, whitelistCommand],
   [extraownerCommand.data.name, extraownerCommand],
   [automodCommand.data.name, automodCommand],
@@ -88,6 +97,7 @@ const commands = new Map<string, any>([
   [pingCommand.data.name, pingCommand],
   [serverinfoCommand.data.name, serverinfoCommand],
   [botinfoCommand.data.name, botinfoCommand],
+  [infoCommand.data.name, infoCommand],
   [staffCommand.data.name, staffCommand],
   [autoroleCommand.data.name, autoroleCommand],
   [welcomeCommand.data.name, welcomeCommand],
@@ -100,7 +110,12 @@ const commands = new Map<string, any>([
   [customrolesCommand.data.name, customrolesCommand],
   [j2cCommand.data.name, j2cCommand],
   [voiceCommand.data.name, voiceCommand],
+  [vcBanCommand.data.name, vcBanCommand],
+  [giveawayCommand.data.name, giveawayCommand],
   [autoreactCommand.data.name, autoreactCommand],
+  [autoResponderCommand.data.name, autoResponderCommand],
+  [funCommand.data.name, funCommand],
+  [ignoreCommand.data.name, ignoreCommand],
   [joindmCommand.data.name, joindmCommand],
   [backupCommand.data.name, backupCommand],
 ]);
@@ -126,7 +141,25 @@ export async function handleInteractionCreate(
     return;
   }
 
-  // 4. Handle Voice Room Control Panel Buttons
+  // 4. Handle Giveaway Entry Button
+  if (interaction.isButton() && interaction.customId === "aegis_giveaway_enter") {
+    const giveaway = await getGiveawayByMessageId(interaction.message.id);
+    if (!giveaway || giveaway.ended) {
+      await interaction.reply({ content: "❌ This giveaway has already ended.", ephemeral: true });
+      return;
+    }
+
+    if (giveaway.participants.includes(interaction.user.id)) {
+      await interaction.reply({ content: "⚠️ You have already entered this giveaway!", ephemeral: true });
+      return;
+    }
+
+    await addParticipant(interaction.message.id, interaction.user.id);
+    await interaction.reply({ content: "🎉 **You successfully entered the giveaway! Good luck!**", ephemeral: true });
+    return;
+  }
+
+  // 5. Handle Voice Room Control Panel Buttons
   if (interaction.isButton() && interaction.customId.startsWith("aegis_vc_")) {
     const member = interaction.member as GuildMember;
     const vc = member?.voice.channel as VoiceChannel | null;
@@ -170,7 +203,7 @@ export async function handleInteractionCreate(
     return;
   }
 
-  // 5. Handle Slash Commands
+  // 6. Handle Slash Commands
   if (interaction.isChatInputCommand()) {
     const command = commands.get(interaction.commandName);
     if (!command) return;

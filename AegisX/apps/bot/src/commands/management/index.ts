@@ -14,3 +14,4 @@ export * from "./joindm.js";
 export * from "./backup.js";
 export * from "./staff.js";
 export * from "./setup.js";
+export * from "./ignore.js";

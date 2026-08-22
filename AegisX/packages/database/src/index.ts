@@ -226,5 +226,53 @@ export {
 } from "./repositories/ticket.repository.js";
 
 export {
+  GiveawayRecordModel,
+  type GiveawayRecord,
+} from "./models/GiveawayRecord.js";
+
+export {
+  createGiveaway,
+  getGiveawayByMessageId,
+  getActiveGiveaways,
+  getDueGiveaways,
+  endGiveaway,
+  addParticipant,
+  removeParticipant,
+  deleteGiveaway,
+} from "./repositories/giveaway.repository.js";
+
+export {
+  VoiceBanRecordModel,
+  type VoiceBanRecord,
+} from "./models/VoiceBanRecord.js";
+
+export {
+  addVoiceBan,
+  removeVoiceBan,
+  isVoiceBanned,
+  listVoiceBans,
+  clearAllVoiceBans,
+} from "./repositories/voice-ban.repository.js";
+
+export {
+  AutoResponderRuleModel,
+  type AutoResponderRule,
+} from "./models/AutoResponderRule.js";
+
+export {
+  upsertAutoResponder,
+  deleteAutoResponder,
+  listAutoResponders,
+} from "./repositories/autoresponder.repository.js";
+
+
+export {
+  type AutoEmergencyConfig,
+  type IgnoreRule,
+  type IgnoreConfig,
+  type CustomRoleCategory,
+} from "./models/GuildConfig.js";
+
+export {
   getGuildConfig as getSecurityGuildConfig,
 } from "./services/guild-config.service.js";

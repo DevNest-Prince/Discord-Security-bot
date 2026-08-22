@@ -219,12 +219,41 @@ export interface WarnConfig {
   escalationRules: WarnEscalationRule[];
 }
 
+export interface AutoEmergencyConfig {
+
+  enabled: boolean;
+  triggerThreshold: number; // e.g. 3 critical incidents in 30s
+  windowSeconds: number;
+  quarantineChannels: boolean;
+  stripRogueRoles: boolean;
+  logChannelId: string | null;
+}
+
+export interface IgnoreRule {
+  targetId: string;
+  targetType: "channel" | "role" | "user";
+  scope: "all" | "commands" | "automod" | "logging" | "antinuke";
+  reason?: string;
+}
+
+export interface IgnoreConfig {
+  rules: IgnoreRule[];
+}
+
+export interface CustomRoleCategory {
+  id: string; // e.g. 'vip', 'friend', 'guest', 'staff', 'girl'
+  name: string;
+  roleId: string;
+  reqRoleId?: string | null;
+}
+
 export interface GuildConfig {
   guildId: string;
   prefix: string;
   security: SecurityConfig;
   automod: AutomodConfig;
   emergency: EmergencyConfig;
+  autoEmergency?: AutoEmergencyConfig;
   antiBetray: AntiBetrayConfig;
   limits: LimitsConfig;
   logging: LoggingConfig;
@@ -236,6 +265,8 @@ export interface GuildConfig {
   jail: JailConfig;
   raid: RaidConfig;
   warns: WarnConfig;
+  ignoreSystem?: IgnoreConfig;
+  customRoleCategories?: CustomRoleCategory[];
   tickets: TicketConfig;
   leveling: LevelingConfig;
   j2c: J2CConfig;
@@ -246,6 +277,7 @@ export interface GuildConfig {
 }
 
 export type GuildConfigDocument = GuildConfig & Document;
+
 
 
 
@@ -686,7 +718,62 @@ const GuildConfigSchema = new Schema<GuildConfig>(
       type: [CustomRoleSchema],
       default: [],
     },
+    autoEmergency: {
+      type: new Schema<AutoEmergencyConfig>(
+        {
+          enabled: { type: Boolean, default: false },
+          triggerThreshold: { type: Number, default: 3 },
+          windowSeconds: { type: Number, default: 30 },
+          quarantineChannels: { type: Boolean, default: true },
+          stripRogueRoles: { type: Boolean, default: true },
+          logChannelId: { type: String, default: null },
+        },
+        { _id: false },
+      ),
+      default: () => ({}),
+    },
+    ignoreSystem: {
+      type: new Schema<IgnoreConfig>(
+        {
+          rules: {
+            type: [
+              new Schema<IgnoreRule>(
+                {
+                  targetId: { type: String, required: true },
+                  targetType: { type: String, enum: ["channel", "role", "user"], required: true },
+                  scope: {
+                    type: String,
+                    enum: ["all", "commands", "automod", "logging", "antinuke"],
+                    default: "all",
+                  },
+                  reason: { type: String, default: "No reason provided." },
+                },
+                { _id: false },
+              ),
+            ],
+            default: [],
+          },
+        },
+        { _id: false },
+      ),
+      default: () => ({}),
+    },
+    customRoleCategories: {
+      type: [
+        new Schema<CustomRoleCategory>(
+          {
+            id: { type: String, required: true },
+            name: { type: String, required: true },
+            roleId: { type: String, required: true },
+            reqRoleId: { type: String, default: null },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
   },
+
 
   {
     timestamps: true,

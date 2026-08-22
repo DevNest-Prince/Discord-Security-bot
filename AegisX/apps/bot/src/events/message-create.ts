@@ -1,16 +1,13 @@
 import {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
+  AuditLogEvent,
+  PermissionFlagsBits,
   type Message,
-  type TextChannel,
 } from "discord.js";
+import { getGuildConfig } from "@aegisx/database";
+import { antiNukeService, recoveryService } from "../security/antinuke/index.js";
 import { autoModService } from "../security/automod/index.js";
-import { getGuildConfig } from "../services/guild-config.service.js";
-import { securityExemptionService } from "../security/exemptions/security-exemption.service.js";
-import { enforcementService } from "../security/enforcement/enforcement.service.js";
 import {
+
   helpCommand,
   antinukeCommand,
   whitelistCommand,
@@ -36,15 +33,18 @@ import {
   pingCommand,
   serverinfoCommand,
   botinfoCommand,
+  infoCommand,
   securityCommand,
   raidCommand,
+  autoEmergencyCommand,
   warnCommand,
   casesCommand,
   jailCommand,
   staffCommand,
   goodbyeCommand,
   voiceCommand,
-
+  vcBanCommand,
+  giveawayCommand,
   setupCommand,
   autoroleCommand,
   welcomeCommand,
@@ -56,126 +56,85 @@ import {
   customrolesCommand,
   j2cCommand,
   autoreactCommand,
+  autoResponderCommand,
+  funCommand,
+  ignoreCommand,
   joindmCommand,
   backupCommand,
 } from "../commands/index.js";
-
-
 
 export async function handleMessageCreate(message: Message): Promise<void> {
   if (message.author.bot || !message.guild || !message.member) {
     return;
   }
 
-  const guild = message.guild;
-  const author = message.author;
-  const client = guild.client;
-  const botId = client.user?.id;
-
-  // 1. Bot Mention Response (@Bot or @Bot help)
-  const mentionRegex = new RegExp(`^<@!?${botId}>(?:\\s+help)?$`, "i");
-  if (botId && mentionRegex.test(message.content.trim())) {
-    try {
-      const config = await getGuildConfig(guild.id);
-      const prefix = config.prefix || ">";
-
-      const embed = new EmbedBuilder()
-        .setAuthor({
-          name: `${client.user?.username ?? "AegisX"} Security Assistant`,
-          iconURL: client.user?.displayAvatarURL(),
-        })
-        .setColor(0xff0033)
-        .setDescription(
-          `Hey <@${author.id}>! My prefix for **${guild.name}** is \`${prefix}\`\n\n` +
-          `• Type \`${prefix}help\` to view all modules and commands.\n` +
-          `• Total Commands: **45+** | Slash: **28**\n\n` +
-          `**Main Defense Modules:**\n` +
-          `🛡️ : Antinuke Security\n` +
-          `🔒 : Anti Betray ⭐\n` +
-          `🎚️ : Limit System ⭐\n` +
-          `❌ : Emergency & Lockdown\n` +
-          `🚨 : Automod Engine\n` +
-          `🛠️ : Moderation Suite\n\n` +
-          `*Need assistance? Click the support or invite buttons below!*`,
-        )
-        .setFooter({ text: `AegisX Security Defense`, iconURL: client.user?.displayAvatarURL() });
-
-      const btnInvite = new ButtonBuilder()
-        .setLabel("Invite AegisX")
-        .setURL(`https://discord.com/oauth2/authorize?client_id=${botId}&permissions=8&scope=bot%20applications.commands`)
-        .setStyle(ButtonStyle.Link);
-
-      const btnSupport = new ButtonBuilder()
-        .setLabel("Support Server")
-        .setURL("https://discord.gg/")
-        .setStyle(ButtonStyle.Link);
-
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(btnInvite, btnSupport);
-
-      await message.reply({ embeds: [embed], components: [row] });
+  // 1. Check Ignore & Exemption System
+  try {
+    const { ignoreService } = await import("../services/management/ignore.service.js");
+    const isIgnored = await ignoreService.isIgnored(
+      message.guild.id,
+      {
+        channelId: message.channel.id,
+        roleIds: message.member.roles.cache.map((r) => r.id),
+        userId: message.author.id,
+      },
+      "commands",
+    );
+    if (isIgnored && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
       return;
-    } catch (err) {
-      console.error("⚠️ Failed to reply to bot mention:", err);
     }
-  }
+  } catch {}
 
-  // 2. Anti-Everyone / Anti-Here Check
+  // 2. Anti-Everyone / Anti-Here Mention Defense
   if (message.mentions.everyone) {
     try {
-      const config = await getGuildConfig(guild.id);
-      if (config.security?.antiNuke?.enabled) {
-        const exemption = securityExemptionService.check(guild, author, {
-          actionType: "meneve",
-          extraOwnerIds: config.security.extraOwners,
-          whitelistedUsers: config.security.whitelistedUsers,
-        });
-
-        if (!exemption.exempt) {
-          await message.delete().catch(() => null);
-
-          await enforcementService.execute({
-            guild,
-            executorId: author.id,
-            action: "timeout",
-            reason: "Anti-Nuke: Unauthorized @everyone / @here mention",
-            timeoutMinutes: 60,
-          });
-
-          if (message.channel && "send" in message.channel) {
-            const embed = new EmbedBuilder()
-              .setTitle("🚨 Anti-Everyone Triggered")
-              .setColor(0xff0000)
-              .setDescription(`❌ | <@${author.id}> has been **timed out for 1 hour** for unauthorized \`@everyone\` / \`@here\` mention.`)
-              .setFooter({ text: `AegisX Security Defense`, iconURL: client.user?.displayAvatarURL() });
-
-            const alertMsg = await (message.channel as TextChannel).send({ embeds: [embed] });
-            setTimeout(() => alertMsg.delete().catch(() => null), 15_000);
-          }
-
-          return;
-        }
-      }
-    } catch (err) {
-      console.error("⚠️ Anti-Everyone check error:", err);
+      await antiNukeService.handle(message.guild, {
+        eventName: "mentionEveryone",
+        action: AuditLogEvent.MemberUpdate,
+        targetId: message.author.id,
+        actionType: "meneve",
+        immediatePunish: true,
+        onRecover: async () => {
+          await message.delete().catch(() => {});
+        },
+      });
+    } catch (error) {
+      console.error(
+        `❌ Anti-Nuke message handler failed in guild ${message.guild.id}:`,
+        error,
+      );
     }
   }
 
-  // 3. AutoMod Pipeline
-  const automodHandled = await autoModService.handleMessage(message);
-  if (automodHandled) {
-    return;
+  // 3. AutoMod Real-time Content Filter Pipeline
+  try {
+    const automodBlocked = await autoModService.handleMessage(message);
+    if (automodBlocked) {
+      return; // Stop processing if message was deleted/punished by AutoMod
+    }
+  } catch (automodErr) {
+
+    console.error("❌ AutoMod execution error:", automodErr);
   }
 
-  // 4. Prefix Command Execution
+  // 4. Custom Keyword AutoResponder Engine
   try {
-    const config = await getGuildConfig(guild.id);
-    const prefix = config.prefix || ">";
+    const { autoResponderService } = await import("../services/automation/autoresponder.service.js");
+    const autoReplied = await autoResponderService.handleMessage(message);
+    if (autoReplied) return;
+  } catch {}
 
-    if (!message.content.startsWith(prefix)) return;
+  // 5. Prefix Command Dispatcher
+  try {
+    const guildConfig = await getGuildConfig(message.guild.id);
+    const prefix = guildConfig.prefix || ">";
 
-    const args = message.content.slice(prefix.length).trim().split(/\s+/);
+    if (!message.content.startsWith(prefix)) {
+      return;
+    }
+
+    const args = message.content.slice(prefix.length).trim().split(/ +/);
     const commandName = args.shift()?.toLowerCase();
-
     if (!commandName) return;
 
     switch (commandName) {
@@ -190,23 +149,19 @@ export async function handleMessageCreate(message: Message): Promise<void> {
         await whitelistCommand.executePrefix(message, args);
         break;
       case "extraowner":
-      case "eo":
         await extraownerCommand.executePrefix(message, args);
         break;
       case "automod":
         await automodCommand.executePrefix(message, args);
         break;
       case "emergency":
-        await emergencyCommand.executePrefix(message, args, "lockdown");
+        await emergencyCommand.executePrefix(message, ["lockdown", ...args]);
         break;
       case "unemergency":
-        await emergencyCommand.executePrefix(message, args, "restore");
+        await emergencyCommand.executePrefix(message, ["unlockdown", ...args]);
         break;
-      case "lockdown":
-        await emergencyCommand.executePrefix(message, args, "lockdown");
-        break;
-      case "unlockdown":
-        await emergencyCommand.executePrefix(message, args, "restore");
+      case "autoemergency":
+        await autoEmergencyCommand.executePrefix(message, args);
         break;
       case "antibetray":
         await antibetrayCommand.executePrefix(message, args);
@@ -229,6 +184,7 @@ export async function handleMessageCreate(message: Message): Promise<void> {
         await muteCommand.executePrefix(message, args);
         break;
       case "unmute":
+      case "untimeout":
         await unmuteCommand.executePrefix(message, args);
         break;
       case "lock":
@@ -266,6 +222,13 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       case "si":
         await serverinfoCommand.executePrefix(message);
         break;
+      case "userinfo":
+      case "ui":
+      case "avatar":
+      case "av":
+      case "banner":
+        await infoCommand.executePrefix(message, args);
+        break;
       case "botinfo":
       case "bi":
       case "stats":
@@ -276,6 +239,9 @@ export async function handleMessageCreate(message: Message): Promise<void> {
         break;
       case "welcome":
         await welcomeCommand.executePrefix(message, args);
+        break;
+      case "goodbye":
+        await goodbyeCommand.executePrefix(message, args);
         break;
       case "verification":
       case "verify":
@@ -303,11 +269,42 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       case "logs":
         await loggingCommand.executePrefix(message, args);
         break;
+      case "customroles":
+      case "customrole":
       case "invcrole":
         await customrolesCommand.executePrefix(message, args);
         break;
       case "j2c":
-        await j2cCommand.executePrefix(message, args);
+      case "voice":
+        await voiceCommand.executePrefix(message, args);
+        break;
+      case "vcban":
+      case "boycott":
+        await vcBanCommand.executePrefix(message, args);
+        break;
+      case "giveaway":
+      case "gstart":
+      case "gend":
+      case "greroll":
+      case "glist":
+        await giveawayCommand.executePrefix(message, [commandName, ...args]);
+        break;
+      case "autoresponder":
+      case "ar":
+        await autoResponderCommand.executePrefix(message, args);
+        break;
+      case "8ball":
+      case "coinflip":
+      case "flip":
+      case "roll":
+      case "dice":
+      case "quote":
+      case "rps":
+        await funCommand.executePrefix(message, [commandName, ...args]);
+        break;
+      case "ignore":
+      case "bypass":
+        await ignoreCommand.executePrefix(message, args);
         break;
       case "autoreact":
         await autoreactCommand.executePrefix(message, args);
@@ -343,12 +340,6 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       case "staff":
         await staffCommand.executePrefix(message, args);
         break;
-      case "goodbye":
-        await goodbyeCommand.executePrefix(message, args);
-        break;
-      case "voice":
-        await voiceCommand.executePrefix(message, args);
-        break;
       default:
         break;
     }
@@ -373,7 +364,4 @@ export async function handleMessageCreate(message: Message): Promise<void> {
       }
     }
   } catch {}
-
 }
-
-
