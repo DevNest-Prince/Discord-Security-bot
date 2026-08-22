@@ -18,13 +18,15 @@ import DiscordProvider from "next-auth/providers/discord";
 import { AuthOptions } from "next-auth";
 
 export const authOptions: AuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || "aegisx_default_secure_secret_key_2026",
   providers: [
     DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID || "",
+      clientId: process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || "",
       clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
       authorization: { params: { scope: "identify guilds" } },
     }),
   ],
+
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
